@@ -13,7 +13,6 @@ import {
   Filter,
   AlertCircle
 } from 'lucide-react';
-import AdminLayout from '@/components/admin/AdminLayout';
 
 export default function AdminBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -84,7 +83,7 @@ export default function AdminBookingsPage() {
   });
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -233,6 +232,6 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 }

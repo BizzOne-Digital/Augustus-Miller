@@ -12,28 +12,28 @@ import {
   Image as ImageIcon,
   AlertCircle
 } from 'lucide-react';
-import AdminLayout from '@/components/admin/AdminLayout';
 
 export default function AdminSettingsPage() {
+  // Keys must match the SiteSettings shape returned by GET /api/settings.
   const [settings, setSettings] = useState<any>({
-    companyName: 'Miller Group of Company LLC',
-    tagline: 'One Group. Many Solutions. Endless Possibilities.',
-    contactEmail: 'sgustus76@gmail.com',
-    phone: '+1 (770) 572-2022',
-    address: 'Atlanta Metropolitan Area, Georgia, United States',
-    primaryColor: '#0A2540',
-    accentColor: '#C8973E'
+    businessName: '',
+    corporateMotto: '',
+    primaryEmail: '',
+    primaryPhone: '',
+    primaryAddress: ''
   });
 
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Upload manager state
   const [targetFolder, setTargetFolder] = useState('products');
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,19 +50,25 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     setSavingSettings(true);
     setSavedSuccess(false);
+    setSaveError(null);
 
     try {
       const res = await fetch('/api/settings', {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
       if (res.ok) {
+        const updated = await res.json();
+        setSettings(updated);
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);
+      } else {
+        setSaveError('Could not save settings. Please try again.');
       }
     } catch (err) {
       console.error(err);
+      setSaveError('Could not save settings. Please check your connection.');
     } finally {
       setSavingSettings(false);
     }
@@ -72,33 +78,28 @@ export default function AdminSettingsPage() {
     if (!file) return;
     setUploading(true);
     setUploadedUrl(null);
+    setUploadError(null);
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const base64Data = reader.result as string;
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            folder: targetFolder,
-            filename: file.name,
-            fileData: base64Data,
-            mimeType: file.type
-          })
-        });
+    try {
+      // POST /api/upload takes multipart FormData with `file` and `folder`.
+      const body = new FormData();
+      body.append('file', file);
+      body.append('folder', targetFolder);
 
-        if (res.ok) {
-          const data = await res.json();
-          setUploadedUrl(data.url);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setUploading(false);
+      const res = await fetch('/api/upload', { method: 'POST', body });
+      const payload = await res.json().catch(() => null);
+
+      if (res.ok && payload?.success && payload?.url) {
+        setUploadedUrl(payload.url as string);
+      } else {
+        setUploadError(payload?.error || `Upload failed (HTTP ${res.status}).`);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setUploadError('Upload failed. Please check your connection and try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleCopy = (url: string) => {
@@ -108,7 +109,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-8">
         <div>
           <span className="text-xs font-bold text-[#C8973E] tracking-widest uppercase block">
@@ -141,6 +142,13 @@ export default function AdminSettingsPage() {
               </div>
             )}
 
+            {saveError && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span>{saveError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
@@ -148,8 +156,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value={settings.companyName || ''}
-                  onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                  value={settings.businessName || ''}
+                  onChange={(e) => setSettings({ ...settings, businessName: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                 />
               </div>
@@ -160,8 +168,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value={settings.tagline || ''}
-                  onChange={(e) => setSettings({ ...settings, tagline: e.target.value })}
+                  value={settings.corporateMotto || ''}
+                  onChange={(e) => setSettings({ ...settings, corporateMotto: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                 />
               </div>
@@ -173,8 +181,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={settings.phone || ''}
-                    onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                    value={settings.primaryPhone || ''}
+                    onChange={(e) => setSettings({ ...settings, primaryPhone: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
@@ -185,8 +193,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="email"
-                    value={settings.contactEmail || ''}
-                    onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                    value={settings.primaryEmail || ''}
+                    onChange={(e) => setSettings({ ...settings, primaryEmail: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                   />
                 </div>
@@ -198,8 +206,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value={settings.address || ''}
-                  onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                  value={settings.primaryAddress || ''}
+                  onChange={(e) => setSettings({ ...settings, primaryAddress: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
                 />
               </div>
@@ -270,13 +278,20 @@ export default function AdminSettingsPage() {
                 </div>
                 <div>
                   <span className="font-bold text-slate-800 block text-xs">
-                    {uploading ? 'Uploading & Encoding...' : 'Click to Browse or Drag Image Here'}
+                    {uploading ? 'Uploading...' : 'Click to Browse or Drag Image Here'}
                   </span>
                   <span className="text-[10px] text-slate-400">
                     Supports PNG, JPG, WEBP, SVG
                   </span>
                 </div>
               </div>
+
+              {uploadError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 w-4 h-4 shrink-0 text-red-600" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
 
               {/* Upload Result Preview */}
               {uploadedUrl && (
@@ -320,6 +335,6 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }

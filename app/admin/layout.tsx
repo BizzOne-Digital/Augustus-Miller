@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { noIndexMetadata } from '@/lib/seo';
+import AdminShell from '@/components/admin/AdminShell';
 
 /**
  * Admin is private: never index it, never follow links out of it.
@@ -12,5 +13,6 @@ import { noIndexMetadata } from '@/lib/seo';
 export const metadata: Metadata = noIndexMetadata('Admin');
 
 export default function AdminSegmentLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  // AdminShell mounts the sidebar + session guard once for the whole segment.
+  return <AdminShell>{children}</AdminShell>;
 }

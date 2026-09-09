@@ -1,79 +1,194 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { BookOpen, Plus, Trash2, Calendar, ExternalLink, X } from 'lucide-react';
-import AdminLayout from '@/components/admin/AdminLayout';
+import { AlertCircle, BookOpen, Edit2, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import LocalImageField from '@/components/admin/LocalImageField';
+import { resolveImageSrc } from '@/lib/images';
+import {
+  AdminModal,
+  Row,
+  SelectField,
+  StringListField,
+  TextArea,
+  TextField,
+  slugify
+} from '@/components/admin/AdminForm';
+
+const CATEGORY_OPTIONS = [
+  { value: 'Insights', label: 'Insights' },
+  { value: 'Construction', label: 'Construction' },
+  { value: 'Property Management', label: 'Property Management' },
+  { value: 'Business & Finance', label: 'Business & Finance' },
+  { value: 'Maintenance', label: 'Maintenance' },
+  { value: 'Technology', label: 'Technology' },
+  { value: 'Company News', label: 'Company News' }
+];
+
+const STATUS_OPTIONS = [
+  { value: 'Published', label: 'Published' },
+  { value: 'Draft', label: 'Draft' }
+];
+
+const emptyForm = {
+  title: '',
+  slug: '',
+  excerpt: '',
+  content: '',
+  coverImage: '',
+  author: 'Augustus Miller',
+  category: 'Insights',
+  tags: [] as string[],
+  status: 'Published',
+  publishedAt: new Date().toISOString().split('T')[0],
+  readTime: '4 min read',
+  seoTitle: '',
+  seoDescription: ''
+};
+
+type FormState = typeof emptyForm;
 
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
-  // New post form
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('Insights');
-  const [excerpt, setExcerpt] = useState('');
-  const [content, setContent] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [slugLocked, setSlugLocked] = useState(false);
 
-  const fetchPosts = async () => {
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const fetchPosts = useCallback(async () => {
     try {
       const res = await fetch('/api/blog');
-      if (res.ok) {
-        const data = await res.json();
-        setPosts(data || []);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setPosts((await res.json()) || []);
+      setListError(null);
     } catch (e) {
       console.error(e);
+      setListError('Could not load articles. Reload the page to try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
-  const handleAddPost = async (e: React.FormEvent) => {
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setSlugLocked(false);
+    setFormError(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (p: any) => {
+    setEditingId(p.id);
+    setForm({
+      title: p.title || '',
+      slug: p.slug || '',
+      excerpt: p.excerpt || '',
+      content: p.content || '',
+      coverImage: p.coverImage || '',
+      author: p.author || 'Augustus Miller',
+      category: p.category || 'Insights',
+      tags: Array.isArray(p.tags) ? [...p.tags] : [],
+      status: p.status || 'Published',
+      publishedAt: (p.publishedAt || '').split('T')[0] || new Date().toISOString().split('T')[0],
+      readTime: p.readTime || '4 min read',
+      seoTitle: p.seoTitle || '',
+      seoDescription: p.seoDescription || ''
+    });
+    setSlugLocked(true);
+    setFormError(null);
+    setModalOpen(true);
+  };
+
+  /** Rough reading time so the badge stays honest as content changes. */
+  const estimateReadTime = (text: string) => {
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    return `${Math.max(1, Math.round(words / 200))} min read`;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) return;
     setSubmitting(true);
+    setFormError(null);
+
+    const slug = (form.slug || slugify(form.title)).trim();
+    if (!slug) {
+      setFormError('A URL slug is required.');
+      setSubmitting(false);
+      return;
+    }
+    if (posts.some((p) => p.slug === slug && p.id !== editingId)) {
+      setFormError(`The slug "${slug}" is already used by another article.`);
+      setSubmitting(false);
+      return;
+    }
+
+    const payload = {
+      ...form,
+      slug,
+      readTime: form.readTime || estimateReadTime(form.content)
+    };
 
     try {
-      const res = await fetch('/api/blog', {
-        method: 'POST',
+      const res = await fetch(editingId ? `/api/blog/${editingId}` : '/api/blog', {
+        method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          category,
-          excerpt,
-          content,
-          author: 'Augustus Miller'
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (res.ok) {
-        const created = await res.json();
-        setPosts((prev) => [created, ...prev]);
-        setShowAddModal(false);
-        setTitle('');
-        setExcerpt('');
-        setContent('');
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        setFormError(err?.error || `Save failed (HTTP ${res.status}).`);
+        return;
       }
+
+      await fetchPosts();
+      setModalOpen(false);
     } catch (err) {
       console.error(err);
+      setFormError('Save failed. Check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this article?')) return;
+  const handleDelete = async (p: any) => {
+    if (!confirm(`Delete "${p.title}"?\n\nThis cannot be undone.`)) return;
     try {
-      const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/blog/${p.id}`, { method: 'DELETE' });
       if (res.ok) {
-        setPosts((prev) => prev.filter((p) => p.id !== id));
+        setPosts((prev) => prev.filter((x) => x.id !== p.id));
+      } else {
+        setListError('Could not delete that article.');
+      }
+    } catch (err) {
+      console.error(err);
+      setListError('Could not delete that article.');
+    }
+  };
+
+  const handleToggleStatus = async (p: any) => {
+    const next = p.status === 'Published' ? 'Draft' : 'Published';
+    try {
+      const res = await fetch(`/api/blog/${p.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next })
+      });
+      if (res.ok) {
+        setPosts((prev) => prev.map((x) => (x.id === p.id ? { ...x, status: next } : x)));
       }
     } catch (err) {
       console.error(err);
@@ -81,174 +196,263 @@ export default function AdminBlogPage() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <span className="text-xs font-bold text-[#C8973E] tracking-widest uppercase block">
-              Content Marketing
+            <span className="block text-xs font-bold uppercase tracking-widest text-[#C8973E]">
+              Content &amp; Insights
             </span>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0A2540]">
-              Articles & Guides
+            <h1 className="font-serif text-2xl font-bold text-[#0A2540] sm:text-3xl">
+              Articles &amp; Guides
             </h1>
-            <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              Publish news, case studies, and field notes across all divisions.
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+              Write and manage blog posts. Drafts stay off the public site and out of search.
             </p>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#C8973E] hover:bg-[#D4A244] text-[#0A2540] text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Write New Article</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/blog"
+              target="_blank"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#0A2540] transition-colors hover:border-[#C8973E]"
+            >
+              <span>Preview</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#C8973E] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#0A2540] shadow-sm transition-colors hover:bg-[#D4A244]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Article</span>
+            </button>
+          </div>
         </div>
 
+        {listError && (
+          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+            <span>{listError}</span>
+          </div>
+        )}
+
         {loading ? (
-          <div className="text-center py-16 text-slate-400 text-sm">
-            Loading articles...
+          <div className="py-16 text-center text-sm text-slate-400">Loading articles…</div>
+        ) : posts.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
+            <BookOpen className="mx-auto mb-3 h-8 w-8 text-slate-300" />
+            <p className="text-sm font-semibold text-slate-600">No articles yet.</p>
+            <button
+              onClick={openCreate}
+              className="mt-3 text-xs font-bold uppercase tracking-wider text-[#C8973E] hover:underline"
+            >
+              Write your first article
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-3">
             {posts.map((p) => (
               <div
                 key={p.id}
-                className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-[#C8973E]/60 sm:flex-row sm:items-center"
               >
-                <div className="space-y-1 max-w-2xl">
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="px-2 py-0.5 rounded bg-slate-100 font-bold text-[#0A2540] uppercase">
+                <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:w-36">
+                  <Image
+                    src={resolveImageSrc(p.coverImage)}
+                    alt={p.title}
+                    fill
+                    sizes="144px"
+                    className="object-cover"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleToggleStatus(p)}
+                      title="Toggle published / draft"
+                      className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        p.status === 'Published'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {p.status}
+                    </button>
+                    <span className="rounded-full bg-[#0A2540]/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0A2540]">
                       {p.category}
                     </span>
-                    <span>{p.publishedAt}</span>
-                    <span>By {p.author}</span>
+                    <span className="text-[11px] text-slate-400">{p.readTime}</span>
                   </div>
-                  <h2 className="font-serif font-bold text-lg text-[#0A2540]">
+
+                  <h2 className="font-serif text-base font-bold leading-snug text-[#0A2540]">
                     {p.title}
                   </h2>
-                  <p className="text-xs text-slate-600 line-clamp-2">
+                  <p className="line-clamp-2 text-xs leading-relaxed text-slate-600">
                     {p.excerpt}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    By {p.author} · /blog/{p.slug}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                <div className="flex shrink-0 items-center gap-1">
                   <Link
                     href={`/blog/${p.slug}`}
                     target="_blank"
-                    className="p-2 text-slate-500 hover:text-[#0A2540] hover:bg-slate-100 rounded-lg transition-colors text-xs font-semibold inline-flex items-center gap-1"
+                    title="View article"
+                    className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0A2540]"
                   >
-                    <span>View</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="h-4 w-4" />
                   </Link>
-
                   <button
-                    onClick={() => handleDelete(p.id)}
-                    className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition-colors"
+                    onClick={() => openEdit(p)}
+                    title="Edit article"
+                    className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#0A2540]"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p)}
+                    title="Delete article"
+                    className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-6 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-serif font-bold text-lg text-[#0A2540]">
-                  Create New Article
-                </h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-1 rounded-md hover:bg-slate-100 text-slate-400"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddPost} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Article Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 5 Maintenance Checks Every Atlanta Property Owner Must Do"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  >
-                    <option value="Insights">Insights</option>
-                    <option value="Property Care">Property Care</option>
-                    <option value="Consulting">Consulting</option>
-                    <option value="Construction">Construction</option>
-                    <option value="IT & Tech">IT & Tech</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Short Excerpt
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="Brief summary displayed on article cards..."
-                    value={excerpt}
-                    onChange={(e) => setExcerpt(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Full Content *
-                  </label>
-                  <textarea
-                    rows={8}
-                    required
-                    placeholder="Write your article text..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2 rounded-lg bg-[#C8973E] hover:bg-[#D4A244] text-[#0A2540] font-bold uppercase tracking-wider"
-                  >
-                    {submitting ? 'Publishing...' : 'Publish Article'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
-    </AdminLayout>
+
+      <AdminModal
+        open={modalOpen}
+        wide
+        title={editingId ? 'Edit Article' : 'New Article'}
+        onClose={() => setModalOpen(false)}
+        onSubmit={handleSubmit}
+        submitting={submitting}
+        error={formError}
+        submitLabel={editingId ? 'Save Changes' : 'Create Article'}
+      >
+        <TextField
+          label="Title"
+          required
+          value={form.title}
+          placeholder="e.g. Preventative Maintenance for Georgia Properties"
+          onChange={(v) => {
+            set('title', v);
+            if (!slugLocked) set('slug', slugify(v));
+          }}
+        />
+
+        <Row>
+          <TextField
+            label="URL Slug"
+            required
+            value={form.slug}
+            hint={`Public URL: /blog/${form.slug || 'your-slug'}`}
+            onChange={(v) => {
+              setSlugLocked(true);
+              set('slug', slugify(v));
+            }}
+          />
+          <TextField
+            label="Author"
+            value={form.author}
+            onChange={(v) => set('author', v)}
+          />
+        </Row>
+
+        <TextArea
+          label="Excerpt"
+          required
+          rows={2}
+          value={form.excerpt}
+          placeholder="The summary shown on cards and in search results."
+          onChange={(v) => set('excerpt', v)}
+        />
+
+        <TextArea
+          label="Article Content"
+          required
+          rows={10}
+          value={form.content}
+          placeholder="The full article body."
+          hint="Plain text and line breaks are preserved."
+          onChange={(v) => set('content', v)}
+        />
+
+        <LocalImageField
+          label="Cover Image"
+          folder="blog"
+          value={form.coverImage}
+          onChange={(url) => set('coverImage', url)}
+          helpText="Wide landscape image works best · max 8MB"
+        />
+
+        <Row>
+          <SelectField
+            label="Category"
+            value={form.category}
+            options={CATEGORY_OPTIONS}
+            onChange={(v) => set('category', v)}
+          />
+          <SelectField
+            label="Status"
+            value={form.status}
+            options={STATUS_OPTIONS}
+            onChange={(v) => set('status', v)}
+            hint="Drafts are hidden and set to noindex."
+          />
+        </Row>
+
+        <Row>
+          <TextField
+            label="Publish Date"
+            type="date"
+            value={form.publishedAt}
+            onChange={(v) => set('publishedAt', v)}
+          />
+          <TextField
+            label="Read Time"
+            value={form.readTime}
+            placeholder="4 min read"
+            hint="Leave blank to calculate from the content length."
+            onChange={(v) => set('readTime', v)}
+          />
+        </Row>
+
+        <StringListField
+          label="Tags"
+          items={form.tags}
+          onChange={(items) => set('tags', items)}
+          placeholder="e.g. property maintenance"
+        />
+
+        <div className="border-t border-slate-100 pt-4">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            Search Engine Optimisation (optional)
+          </p>
+          <div className="space-y-4">
+            <TextField
+              label="SEO Title"
+              value={form.seoTitle}
+              placeholder="Leave blank to use the article title"
+              onChange={(v) => set('seoTitle', v)}
+            />
+            <TextArea
+              label="SEO Description"
+              rows={2}
+              value={form.seoDescription}
+              placeholder="Leave blank to use the excerpt"
+              onChange={(v) => set('seoDescription', v)}
+            />
+          </div>
+        </div>
+      </AdminModal>
+    </>
   );
 }

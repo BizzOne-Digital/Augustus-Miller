@@ -17,7 +17,8 @@ import {
   Star,
   Upload,
   Menu,
-  X
+  X,
+  HelpCircle
 } from 'lucide-react';
 import MillerLogo from '@/components/site/MillerLogo';
 
@@ -68,6 +69,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Products & Gear', href: '/admin/products', icon: ShoppingBag },
     { name: 'Blog & Articles', href: '/admin/blog', icon: BookOpen },
     { name: 'Testimonials', href: '/admin/testimonials', icon: Star },
+    { name: 'FAQs', href: '/admin/faqs', icon: HelpCircle },
     { name: 'Team Leadership', href: '/admin/team', icon: Users },
     { name: 'Uploads & Settings', href: '/admin/settings', icon: Settings },
   ];
@@ -86,7 +88,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex bg-[#F4F6F9] text-slate-800">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-72 bg-[#0A2540] text-white border-r border-[#C8973E]/20 shrink-0">
+      <aside className="hidden lg:flex flex-col w-72 h-screen sticky top-0 bg-[#0A2540] text-white border-r border-[#C8973E]/20 shrink-0">
         {/* Brand */}
         <div className="p-6 border-b border-slate-700/60 flex items-center gap-3">
           <MillerLogo variant="mark" size="sm" width={40} height={40} />
@@ -153,7 +155,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Top Bar */}
-        <header className="lg:hidden bg-[#0A2540] text-white p-4 flex items-center justify-between border-b border-[#C8973E]/20">
+        <header className="lg:hidden sticky top-0 z-40 bg-[#0A2540] text-white p-4 flex items-center justify-between border-b border-[#C8973E]/20">
           <div className="flex items-center gap-2">
             <MillerLogo variant="mark" size="sm" width={32} height={32} />
             <span className="font-serif font-bold text-sm">Miller Admin</span>
@@ -168,7 +170,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         {/* Mobile Navigation Drawer */}
         {mobileNavOpen && (
-          <div className="lg:hidden bg-[#0A2540] text-white p-4 space-y-1 border-b border-slate-700">
+          <div className="lg:hidden sticky top-[64px] z-30 bg-[#0A2540] text-white p-4 space-y-1 border-b border-slate-700 max-h-[calc(100vh-64px)] overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -194,7 +196,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         )}
 
         {/* Page Content */}
-        <main className="flex-1 p-6 sm:p-8 lg:p-10 overflow-y-auto">
+        <main className="flex-1 p-6 sm:p-8 lg:p-10">
           {children}
         </main>
       </div>

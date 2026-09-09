@@ -10,7 +10,6 @@ import {
   Calendar,
   Search
 } from 'lucide-react';
-import AdminLayout from '@/components/admin/AdminLayout';
 
 export default function AdminMessagesPage() {
   const [messages, setMessages] = useState<any[]>([]);
@@ -78,7 +77,7 @@ export default function AdminMessagesPage() {
   });
 
   return (
-    <AdminLayout>
+    <>
       <div className="space-y-6">
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -214,6 +213,6 @@ export default function AdminMessagesPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </>
   );
 }
