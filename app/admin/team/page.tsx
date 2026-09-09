@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Users, Plus, Trash2, Phone, Mail, X } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import LocalImageField from '@/components/admin/LocalImageField';
 
 export default function AdminTeamPage() {
   const [team, setTeam] = useState<any[]>([]);
@@ -233,18 +234,13 @@ export default function AdminTeamPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Photo URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={photo}
-                    onChange={(e) => setPhoto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  />
-                </div>
+                <LocalImageField
+                  label="Team Member Photo"
+                  folder="team"
+                  value={photo}
+                  onChange={setPhoto}
+                  helpText="Portrait orientation works best · max 8MB"
+                />
 
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">

@@ -6,11 +6,13 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getBlogPosts } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { resolveImageSrc } from '@/lib/images';
 
-export const metadata = {
-  title: 'Blog & Industry Insights | Miller Group of Company LLC',
-  description: 'Expert articles, guides, and practical advice on property management, small business strategy, construction, and IT solutions.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('blog', DEFAULT_LOCALE, '/blog');
+}
 
 export default async function BlogPage() {
   const posts = await getBlogPosts();
@@ -52,7 +54,7 @@ export default async function BlogPage() {
                   <div>
                     <div className="relative h-56 w-full bg-slate-900 overflow-hidden">
                       <Image
-                        src={post.coverImage}
+                        src={resolveImageSrc(post.coverImage)}
                         alt={post.title}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"

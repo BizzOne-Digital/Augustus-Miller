@@ -19,13 +19,17 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import MillerLogo from '@/components/site/MillerLogo';
 import HeroBackground from '@/components/site/HeroBackground';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { getSiteSettings } from '@/lib/db/db';
 
-export const metadata = {
-  title: 'About Us | Miller Group of Company LLC',
-  description: 'Learn about Miller Group of Company LLC, our founder Augustus Miller, and our mission to provide diversified, reliable, and high-value professional services.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('about', DEFAULT_LOCALE, '/about');
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const settings = await getSiteSettings();
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
       <Header />
@@ -64,13 +68,13 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-slate-600 text-base sm:text-lg leading-relaxed">
                 <p>
-                  <strong>Miller Group of Company LLC</strong> was established to provide practical, reliable, and innovative solutions that meet the evolving needs of individuals, businesses, property owners, and communities.
+                  <strong>Miller Group of Company LLC</strong> is a diversified service-oriented company established to provide practical, reliable, and innovative solutions across multiple industries. Built on the belief that clients deserve a single dependable partner, we deliver excellence through professionalism, integrity, and customer satisfaction.
                 </p>
                 <p>
                   In traditional markets, clients are often forced to juggle multiple disjointed vendors — hiring one firm for financial advice, another for physical repairs, a third for construction, and yet another for computer networks. This fragmentation breeds finger-pointing, unexpected costs, and delays.
                 </p>
                 <p>
-                  Under the stewardship of Founder & CEO <strong>Augustus Miller</strong>, we assembled seven complementary divisions under a single, unified banner. Whether managing a rental property, building an addition, configuring an IT office network, or dispatching urgent repairs, our clients receive consistent standards, transparent pricing, and direct executive oversight.
+                  Under the stewardship of Founder & CEO <strong>Augustus Miller</strong>, we assembled seven complementary divisions under a single, unified banner. Whether managing a rental property, building an addition, configuring an IT office network, or dispatching urgent repairs, our clients receive consistent standards, clear written quotes, and direct executive oversight.
                 </p>
               </div>
 
@@ -82,7 +86,7 @@ export default function AboutPage() {
                     <h3 className="font-serif font-bold text-base">Our Mission</h3>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    To deliver innovative, reliable, and high-quality professional services that create lasting value for clients through integrity, excellence, and continuous improvement.
+                    {settings.mission}
                   </p>
                 </div>
 
@@ -92,7 +96,19 @@ export default function AboutPage() {
                     <h3 className="font-serif font-bold text-base">Our Vision</h3>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    To be recognized as a premier diversified service company known for excellence, trusted partnerships, and impactful solutions across Georgia and nationwide.
+                    {settings.vision}
+                  </p>
+                </div>
+              </div>
+
+              {/* Our Philosophy - client-supplied copy */}
+              <div className="pt-4 space-y-3">
+                <div className="inline-block text-xs font-bold text-[#C8973E] tracking-widest uppercase">
+                  Our Philosophy
+                </div>
+                <div className="space-y-3 text-slate-600 text-base leading-relaxed">
+                  <p>
+                    We believe that quality service, honesty, accountability, and innovation are the foundation of long-term success. Every project — large or small — is approached with careful planning, attention to detail, and a commitment to exceeding expectations.
                   </p>
                 </div>
               </div>
@@ -166,7 +182,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-serif font-bold text-xl text-white">INTEGRITY</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  We uphold the highest ethical standards, providing honest assessments, upfront pricing with zero surprises, and clear transparency at every milestone.
+                  Honest, ethical, and transparent service. We provide straightforward assessments, clear written quotes before work begins, and open communication at every milestone.
                 </p>
               </div>
 
@@ -176,7 +192,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-serif font-bold text-xl text-white">RELIABILITY</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  When we commit to a timeline, a dispatch window, or a project scope, we deliver on time, every time, with prompt follow-through and dependable communications.
+                  Consistent, dependable, and timely delivery. When we commit to a timeline, a dispatch window, or a project scope, we follow through and keep you informed.
                 </p>
               </div>
 
@@ -186,7 +202,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-serif font-bold text-xl text-white">QUALITY</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  We take pride in our workmanship, utilizing durable materials, verified technical practices, and rigorous quality assurance on every single job.
+                  High standards in every project. We take pride in our workmanship, using durable materials, verified technical practices, and quality checks on every job.
                 </p>
               </div>
 
@@ -196,7 +212,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="font-serif font-bold text-xl text-white">COMMITMENT</h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  We view our clients as long-term partners. Our success is measured by the ongoing success and peace of mind of the businesses and families we serve.
+                  Dedicated to customer satisfaction and long-term relationships. We view our clients as long-term partners, and measure our success by theirs.
                 </p>
               </div>
             </div>

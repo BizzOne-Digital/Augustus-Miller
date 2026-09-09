@@ -1,11 +1,12 @@
 import React from 'react';
 import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Privacy Policy | Miller Group of Company LLC',
-  description: 'Privacy policy and data protection commitments of Miller Group of Company LLC.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('privacy', DEFAULT_LOCALE, '/privacy-policy');
+}
 
 export default function PrivacyPolicyPage() {
   return (

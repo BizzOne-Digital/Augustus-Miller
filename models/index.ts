@@ -146,15 +146,22 @@ const FAQSchema = new Schema<FAQItem>({
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 
-// Stored Upload Schema (MongoDB buffer storage safe for Vercel / serverless)
+// Stored Upload Schema.
+// Binaries live in MongoDB rather than on disk so uploads survive redeploys and
+// work on serverless hosts with a read-only filesystem (Vercel, Cloud Run).
 const StoredUploadSchema = new Schema<StoredUpload>({
-  folder: { type: String, required: true, index: true },
-  filename: { type: String, required: true, index: true },
+  folder: { type: String, required: true },
+  filename: { type: String, required: true },
   mimeType: { type: String, required: true },
   size: { type: Number, required: true },
   url: { type: String, required: true },
+  data: { type: Buffer, required: true },
+  // Legacy records written before the Buffer migration.
   dataBase64: { type: String }
 }, { timestamps: true });
+
+// One document per (folder, filename); the pair is the public URL path.
+StoredUploadSchema.index({ folder: 1, filename: 1 }, { unique: true });
 
 // Site Settings Schema
 const SiteSettingsSchema = new Schema<SiteSettings>({

@@ -16,10 +16,11 @@ export const initialServices: ServiceItem[] = [
       'Financial Management & Budgeting',
       'Strategic Planning & Feasibility Studies',
       'Cash Flow Analysis & Optimization',
-      'Tax Preparation Support & Guidance',
+      'Tax Preparation (Individual & Business)',
       'Business Registration & Structural Advice',
       'Operational Efficiency & Cost Reduction',
-      'Market Opportunity & Growth Assessment'
+      'Market Opportunity & Growth Assessment',
+      'Investment Guidance & Capital Allocation'
     ],
     benefits: [
       'Clear, data-driven financial roadmaps tailored to your industry',
@@ -107,10 +108,11 @@ export const initialServices: ServiceItem[] = [
       'Roofing & Exterior Cladding Installation',
       'Complete Interior Remodeling & Layout Reconfiguration',
       'Project Planning, Permitting & Timeline Scheduling',
-      'Quality Control Inspections & Finishing Details'
+      'Quality Control Inspections & Finishing Details',
+      'Infrastructure Development & Sitework'
     ],
     benefits: [
-      'Clear transparent pricing with zero surprise cost escalations',
+      'Clear written quotes agreed before work begins',
       'Safety-first job sites adhering to strict construction standards',
       'Direct communication and dedicated on-site project oversight',
       'Durable materials sourced from trusted regional suppliers'
@@ -151,7 +153,8 @@ export const initialServices: ServiceItem[] = [
       'Roofing Patching, Flashing Repair & Leak Mitigation',
       'Flooring Repairs (Hardwood, Tile, LVP, Laminate)',
       'Carpentry, Trim, Molding & Door Jamb Restoration',
-      'Scheduled Preventive Facility Maintenance Plans'
+      'Scheduled Preventive Facility Maintenance Plans',
+      'Emergency Repair Response (Subject to Technician Availability)'
     ],
     benefits: [
       'Rapid diagnostic response for immediate property relief',
@@ -162,7 +165,7 @@ export const initialServices: ServiceItem[] = [
     process: [
       { step: 1, title: 'Service Request', description: 'Contact us with details or photos of the repair needed.' },
       { step: 2, title: 'Diagnostics & Quote', description: 'We inspect the issue on-site or provide an upfront written estimate.' },
-      { step: 3, title: 'Precision Repair', description: 'Our certified technicians complete the repair using commercial-grade parts.' },
+      { step: 3, title: 'Precision Repair', description: 'Our technicians complete the repair using commercial-grade parts.' },
       { step: 4, title: 'Testing & Cleanup', description: 'We test functionality thoroughly and leave the work area clean.' }
     ],
     faq: [
@@ -195,7 +198,9 @@ export const initialServices: ServiceItem[] = [
       'Shelving, Cabinetry Hardware & Mirror Hanging',
       'Gutter Cleaning, Clearing & Downspout Maintenance',
       'Pressure Washing (Driveways, Decks, Siding, Walkways)',
-      'Minor Plumbing & Faucet Replacements'
+      'Minor Plumbing & Faucet Replacements',
+      'Appliance Installation & Hook-up',
+      'General Home Improvement & Odd Jobs'
     ],
     benefits: [
       'Save weekends and eliminate the stress of unfinished to-do lists',
@@ -283,7 +288,10 @@ export const initialServices: ServiceItem[] = [
       'Custom Business Website Design & App Development',
       'Data Backup, Disaster Recovery & Storage Solutions',
       'Hardware Diagnostics, Component Repair & Troubleshooting',
-      'Ongoing Remote & On-Site Helpdesk Support'
+      'Ongoing Remote & On-Site Helpdesk Support',
+      'Software Installation, Licensing & Configuration',
+      'Database Design, Administration & Management',
+      'Digital Transformation Consulting'
     ],
     benefits: [
       'Drastically reduced downtime with proactive monitoring',
@@ -328,40 +336,43 @@ export const initialTeam: TeamMember[] = [
 ];
 
 export const initialTestimonials: Testimonial[] = [
+  // Client-supplied placeholder quotes. These are intentionally anonymous and
+  // carry no invented names, companies, or avatars. Replace only with real,
+  // attributable reviews the client has permission to publish.
   {
     id: 'test-1',
-    customerName: 'Marcus Sterling',
-    customerRole: 'Commercial Property Owner',
-    company: 'Sterling Capital Holdings',
-    content: 'Miller Group handled both our office renovation and ongoing facility maintenance. Having one dependable team manage the electrical, drywall, and property oversight eliminated endless coordination headaches.',
+    customerName: 'Residential Client',
+    customerRole: 'Homeowner',
+    company: '',
+    content: 'Professional, reliable, and fast. Miller Group handled our repairs perfectly.',
     rating: 5,
-    serviceCategory: 'Property Management & Construction',
+    serviceCategory: 'Repairs & Maintenance',
     active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
+    avatarUrl: '',
     createdAt: new Date().toISOString()
   },
   {
     id: 'test-2',
-    customerName: 'Elena Rostova',
-    customerRole: 'Founder & Managing Director',
-    company: 'Vanguard Retail LLC',
-    content: 'Their business consulting division helped us restructure our financial budgeting and streamline operational costs. Augustus and his team provide actionable, grounded advice that delivered measurable results within 60 days.',
+    customerName: 'Small Business Owner',
+    customerRole: 'Business Owner',
+    company: '',
+    content: 'Their business consulting helped us restructure and grow.',
     rating: 5,
     serviceCategory: 'Financial & Business Consultancy',
     active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=300&auto=format&fit=crop',
+    avatarUrl: '',
     createdAt: new Date().toISOString()
   },
   {
     id: 'test-3',
-    customerName: 'David Chen',
-    customerRole: 'Homeowner',
-    company: 'Alpharetta Resident',
-    content: 'Professional, reliable, and fast. Miller Group handled plumbing repairs and a full punch-list of handyman repairs in our home before we moved in. Fair pricing, immaculate cleanup, and great communication throughout.',
+    customerName: 'Commercial Client',
+    customerRole: 'Commercial Property Owner',
+    company: '',
+    content: 'Excellent construction quality and great communication throughout the project.',
     rating: 5,
-    serviceCategory: 'Repairs & Handyman Services',
+    serviceCategory: 'General Construction',
     active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop',
+    avatarUrl: '',
     createdAt: new Date().toISOString()
   }
 ];
@@ -404,11 +415,20 @@ export const initialFAQs: FAQItem[] = [
     createdAt: new Date().toISOString()
   },
   {
+    id: 'faq-6',
+    question: 'Are you licensed and insured?',
+    answer: 'Yes — all services are performed by qualified and insured professionals.',
+    category: 'General',
+    displayOrder: 5,
+    active: true,
+    createdAt: new Date().toISOString()
+  },
+  {
     id: 'faq-5',
     question: 'Do you offer emergency repairs?',
     answer: 'Emergency repair services for urgent plumbing, electrical, or property damage are available depending on technician availability. Please call our direct line for urgent requests.',
     category: 'Repairs',
-    displayOrder: 5,
+    displayOrder: 6,
     active: true,
     createdAt: new Date().toISOString()
   }

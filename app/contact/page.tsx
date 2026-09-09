@@ -201,7 +201,7 @@ function ContactFormContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Your Name *
+                      Full Name *
                     </label>
                     <input
                       type="text"
@@ -245,7 +245,7 @@ function ContactFormContent() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Service Division
+                      Service Needed
                     </label>
                     <select
                       value={service}
@@ -263,6 +263,22 @@ function ContactFormContent() {
                       <option value="Multi-Service Partnership">Multi-Service Partnership</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Preferred Date
+                  </label>
+                  <input
+                    type="date"
+                    value={preferredDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setPreferredDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Optional. Tell us when you would like the work to start and we will confirm availability.
+                  </p>
                 </div>
 
                 <div>

@@ -56,7 +56,7 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 w-full transition-all duration-300">
       {/* Top Corporate Contact Bar */}
-      <div className="bg-[#0A2540] text-slate-200 text-xs py-2 px-4 sm:px-6 lg:px-8 border-b border-[#C8973E]/25">
+      <div className="bg-[#0A2540]/80 backdrop-blur-md supports-[backdrop-filter]:bg-[#0A2540]/70 text-slate-200 text-xs py-2 px-4 sm:px-6 lg:px-8 border-b border-[#C8973E]/25">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-4 sm:gap-6 tracking-wide">
             <a
@@ -98,8 +98,8 @@ export const Header: React.FC = () => {
       <nav
         className={`w-full transition-all duration-300 ${
           isScrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-[0_4px_20px_-4px_rgba(10,37,64,0.08)] py-3 border-b border-slate-200/80'
-            : 'bg-white py-3.5 border-b border-slate-100 shadow-[0_1px_3px_rgba(10,37,64,0.03)]'
+            ? 'bg-white/85 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/72 shadow-[0_8px_30px_-10px_rgba(10,37,64,0.18)] py-3 border-b border-[#C8973E]/25'
+            : 'bg-white/80 backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-white/65 py-3.5 border-b border-white/50 shadow-[0_2px_16px_-8px_rgba(10,37,64,0.12)]'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -109,17 +109,18 @@ export const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden lg:flex items-center space-x-0.5 xl:space-x-1">
+          <div className="hidden lg:flex items-center gap-0 xl:gap-0.5">
             {[
               { name: 'Home', href: '/' },
               { name: 'About', href: '/about' },
+              { name: 'Pricing', href: '/pricing' },
             ].map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`group relative px-3 py-2 rounded-lg text-[13.5px] font-medium tracking-tight transition-all duration-200 ${
+                  className={`group relative whitespace-nowrap px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-[13.5px] font-medium tracking-tight transition-all duration-200 ${
                     isActive
                       ? 'text-[#0A2540] font-semibold bg-[#0A2540]/5'
                       : 'text-slate-600 hover:text-[#0A2540] hover:bg-slate-50'
@@ -127,7 +128,7 @@ export const Header: React.FC = () => {
                 >
                   <span>{link.name}</span>
                   <span
-                    className={`absolute bottom-1 left-3 right-3 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
+                    className={`absolute bottom-1 left-2 right-2 xl:left-3 xl:right-3 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
                       isActive ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-50 group-hover:opacity-60 group-hover:scale-x-100'
                     }`}
                   />
@@ -143,7 +144,7 @@ export const Header: React.FC = () => {
             >
               <Link
                 href="/services"
-                className={`group relative px-3 py-2 rounded-lg text-[13.5px] font-medium tracking-tight inline-flex items-center gap-1.5 transition-all duration-200 ${
+                className={`group relative whitespace-nowrap px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-[13.5px] font-medium tracking-tight inline-flex items-center gap-1 xl:gap-1.5 transition-all duration-200 ${
                   pathname.startsWith('/services')
                     ? 'text-[#0A2540] font-semibold bg-[#0A2540]/5'
                     : 'text-slate-600 hover:text-[#0A2540] hover:bg-slate-50'
@@ -152,7 +153,7 @@ export const Header: React.FC = () => {
                 <span>7 Services</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200" />
                 <span
-                  className={`absolute bottom-1 left-3 right-7 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
+                  className={`absolute bottom-1 left-2 right-6 xl:left-3 xl:right-7 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
                     pathname.startsWith('/services')
                       ? 'opacity-100 scale-x-100'
                       : 'opacity-0 scale-x-50 group-hover:opacity-60 group-hover:scale-x-100'
@@ -162,7 +163,7 @@ export const Header: React.FC = () => {
 
               {/* Mega Dropdown Menu */}
               {servicesDropdownOpen && (
-                <div className="absolute top-full left-0 w-84 bg-white border border-slate-200/90 rounded-2xl shadow-[0_20px_48px_-8px_rgba(10,37,64,0.18)] p-2 z-50 animate-in fade-in slide-in-from-top-1.5 duration-150">
+                <div className="absolute top-full left-0 w-84 bg-white/95 backdrop-blur-xl border border-slate-200/80 ring-1 ring-[#C8973E]/10 rounded-2xl shadow-[0_24px_56px_-12px_rgba(10,37,64,0.28)] p-2 z-50 animate-in fade-in slide-in-from-top-1.5 duration-150">
                   <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em]">
                       Core Business Divisions
@@ -214,7 +215,7 @@ export const Header: React.FC = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`group relative px-3 py-2 rounded-lg text-[13.5px] font-medium tracking-tight transition-all duration-200 ${
+                  className={`group relative whitespace-nowrap px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-[13.5px] font-medium tracking-tight transition-all duration-200 ${
                     isActive
                       ? 'text-[#0A2540] font-semibold bg-[#0A2540]/5'
                       : 'text-slate-600 hover:text-[#0A2540] hover:bg-slate-50'
@@ -222,7 +223,7 @@ export const Header: React.FC = () => {
                 >
                   <span>{link.name}</span>
                   <span
-                    className={`absolute bottom-1 left-3 right-3 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
+                    className={`absolute bottom-1 left-2 right-2 xl:left-3 xl:right-3 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
                       isActive ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-50 group-hover:opacity-60 group-hover:scale-x-100'
                     }`}
                   />
@@ -235,13 +236,13 @@ export const Header: React.FC = () => {
           <div className="hidden lg:flex items-center gap-2.5">
             <Link
               href="/contact"
-              className="text-[12px] font-bold text-[#0A2540] hover:text-[#0A2540] uppercase tracking-[0.08em] py-2.5 px-4 border border-slate-200 rounded-xl hover:border-[#C8973E]/70 hover:bg-[#C8973E]/5 transition-all duration-200"
+              className="whitespace-nowrap text-[11px] xl:text-[12px] font-bold text-[#0A2540] hover:text-[#0A2540] uppercase tracking-[0.06em] xl:tracking-[0.08em] py-2.5 px-3.5 border border-slate-200 rounded-xl hover:border-[#C8973E]/70 hover:bg-[#C8973E]/5 transition-all duration-200"
             >
               Request a Quote
             </Link>
             <Link
               href="/booking"
-              className="group inline-flex items-center gap-2 bg-[#0A2540] hover:bg-[#061426] text-white px-4.5 py-2.5 rounded-xl text-[12px] font-bold tracking-[0.08em] uppercase transition-all duration-200 shadow-sm hover:shadow-md border border-[#C8973E]/40 hover:border-[#C8973E] active:scale-[0.98]"
+              className="group inline-flex items-center gap-2 whitespace-nowrap bg-[#0A2540] hover:bg-[#061426] text-white px-4 py-2.5 rounded-xl text-[11px] xl:text-[12px] font-bold tracking-[0.06em] xl:tracking-[0.08em] uppercase transition-all duration-200 shadow-sm hover:shadow-md border border-[#C8973E]/40 hover:border-[#C8973E] active:scale-[0.98]"
             >
               <Calendar className="w-3.5 h-3.5 text-[#DFC37C] transition-transform duration-200 group-hover:scale-110" />
               <span>Book a Service</span>
@@ -260,7 +261,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-slate-200/90 px-4 pt-4 pb-7 space-y-1 shadow-[0_24px_48px_rgba(10,37,64,0.15)] animate-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-[#C8973E]/20 px-4 pt-4 pb-7 space-y-1 shadow-[0_24px_48px_rgba(10,37,64,0.15)] animate-in slide-in-from-top-2 duration-200">
             <Link
               href="/"
               className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
@@ -332,6 +333,14 @@ export const Header: React.FC = () => {
               }`}
             >
               FAQ
+            </Link>
+            <Link
+              href="/pricing"
+              className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                pathname === '/pricing' ? 'text-[#0A2540] bg-[#0A2540]/5' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Pricing
             </Link>
             <Link
               href="/contact"

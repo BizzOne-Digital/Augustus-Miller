@@ -1,11 +1,12 @@
 import React from 'react';
 import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Terms of Service | Miller Group of Company LLC',
-  description: 'Terms of service and customer agreements for Miller Group of Company LLC.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('terms', DEFAULT_LOCALE, '/terms');
+}
 
 export default function TermsPage() {
   return (

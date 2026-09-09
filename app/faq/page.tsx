@@ -5,17 +5,24 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getFAQs } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, buildFaqJsonLd, generatePageMetadata } from '@/lib/seo';
+import JsonLd from '@/components/site/JsonLd';
 
-export const metadata = {
-  title: 'Frequently Asked Questions | Miller Group of Company LLC',
-  description: 'Find answers to common questions about Miller Group services, booking, quotes, service coverage, and warranties.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('faq', DEFAULT_LOCALE, '/faq');
+}
 
 export default async function FAQPage() {
   const faqs = await getFAQs();
+  // Only published Q&A pairs belong in the FAQPage node.
+  const activeFaqs = faqs
+    .filter(f => f.active !== false)
+    .map(f => ({ question: f.question, answer: f.answer }));
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
+      {activeFaqs.length > 0 && <JsonLd data={buildFaqJsonLd(activeFaqs)} />}
       <Header />
 
       <main className="flex-1">

@@ -19,6 +19,9 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getServices } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { resolveImageSrc } from '@/lib/images';
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp,
@@ -30,10 +33,9 @@ const iconMap: Record<string, React.ElementType> = {
   Monitor
 };
 
-export const metadata = {
-  title: 'Our 7 Core Services | Miller Group of Company LLC',
-  description: 'Explore the 7 professional divisions of Miller Group of Company LLC: business consulting, property management, construction, repairs, handyman, transportation, and IT services.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('services', DEFAULT_LOCALE, '/services');
+}
 
 export default async function ServicesPage() {
   const services = await getServices();
@@ -144,7 +146,7 @@ export default async function ServicesPage() {
                   <div className={`lg:col-span-5 relative ${isEven ? 'lg:order-1' : 'lg:order-2'}`}>
                     <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden shadow-xl border border-slate-200 group">
                       <Image
-                        src={svc.heroImage}
+                        src={resolveImageSrc(svc.heroImage)}
                         alt={svc.name}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"

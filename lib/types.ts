@@ -157,8 +157,12 @@ export interface StoredUpload {
   mimeType: string;
   size: number;
   url: string;
+  /** Binary payload as stored in MongoDB. */
+  data?: Buffer;
+  /** Legacy base64 payload, kept so records written before the Buffer migration still serve. */
   dataBase64?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SiteSettings {

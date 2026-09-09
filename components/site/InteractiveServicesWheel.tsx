@@ -20,6 +20,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import MillerLogo from './MillerLogo';
+import { resolveImageSrc } from '@/lib/images';
 
 interface DivisionInfo {
   id: string;
@@ -257,7 +258,7 @@ export const InteractiveServicesWheel: React.FC = () => {
               <div className="lg:col-span-5 relative">
                 <div className="relative h-72 sm:h-84 lg:h-96 w-full rounded-xl overflow-hidden border border-[#C8973E]/30 shadow-2xl group">
                   <Image
-                    src={activeService.image}
+                    src={resolveImageSrc(activeService.image)}
                     alt={activeService.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -293,7 +294,7 @@ export const InteractiveServicesWheel: React.FC = () => {
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold tracking-[0.12em] text-white uppercase">INTEGRITY</span>
-              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Honest, transparent, ethical client partnerships</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Honest, ethical, and transparent service.</p>
             </div>
 
             <div className="flex flex-col items-center">
@@ -301,7 +302,7 @@ export const InteractiveServicesWheel: React.FC = () => {
                 <Handshake className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold tracking-[0.12em] text-white uppercase">RELIABILITY</span>
-              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Dependable, consistent, and timely delivery</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Consistent, dependable, and timely delivery.</p>
             </div>
 
             <div className="flex flex-col items-center">
@@ -309,7 +310,7 @@ export const InteractiveServicesWheel: React.FC = () => {
                 <Award className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold tracking-[0.12em] text-white uppercase">QUALITY</span>
-              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">High standards of workmanship & service</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">High standards in every project.</p>
             </div>
 
             <div className="flex flex-col items-center">
@@ -317,7 +318,7 @@ export const InteractiveServicesWheel: React.FC = () => {
                 <Users className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold tracking-[0.12em] text-white uppercase">COMMITMENT</span>
-              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Dedicated to long-term client success</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-[180px]">Dedicated to customer satisfaction and long-term relationships.</p>
             </div>
           </div>
 

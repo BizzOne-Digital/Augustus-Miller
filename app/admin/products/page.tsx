@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import LocalImageField from '@/components/admin/LocalImageField';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -246,18 +247,13 @@ export default function AdminProductsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Image URL (Unsplash or Uploaded)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#0A2540]"
-                  />
-                </div>
+                <LocalImageField
+                  label="Product Image"
+                  folder="products"
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  helpText="PNG, JPEG, WEBP, or GIF · max 8MB · stored in the database so it survives redeploys"
+                />
 
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">

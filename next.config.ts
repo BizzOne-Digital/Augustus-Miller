@@ -10,6 +10,19 @@ const nextConfig: NextConfig = {
   },
   // Allow access to remote image placeholder.
   images: {
+    // Admin uploads are served from our own /api/uploads/** route. localPatterns
+    // is what next/image checks for same-origin paths; without it these src
+    // values are rejected by the optimizer.
+    localPatterns: [
+      {
+        pathname: '/api/uploads/**',
+        search: ''
+      },
+      {
+        pathname: '/assets/**',
+        search: ''
+      }
+    ],
     remotePatterns: [
       {
         protocol: 'https',

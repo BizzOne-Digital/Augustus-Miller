@@ -6,15 +6,41 @@ import { Calendar, Clock, User, ArrowLeft, Share2, ArrowRight } from 'lucide-rea
 import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import { getBlogPostBySlug, getBlogPosts } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import JsonLd from '@/components/site/JsonLd';
+import { resolveImageSrc } from '@/lib/images';
+import {
+  DEFAULT_LOCALE,
+  SITE_NAME,
+  absoluteImageUrl,
+  absoluteUrl,
+  buildBreadcrumbJsonLd,
+  buildMetadata,
+  getSiteUrl,
+  noIndexMetadata
+} from '@/lib/seo';
 
-export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params;
   const post = await getBlogPostBySlug(slug);
-  if (!post) return { title: 'Article Not Found | Miller Group' };
-  return {
-    title: post.seoTitle || `${post.title} | Miller Group Insights`,
-    description: post.seoDescription || post.excerpt
-  };
+
+  if (!post) {
+    return noIndexMetadata('Article Not Found');
+  }
+
+  return buildMetadata({
+    title: post.seoTitle || post.title,
+    description: post.seoDescription || post.excerpt,
+    locale: DEFAULT_LOCALE,
+    path: `/blog/${post.slug}`,
+    image: post.coverImage,
+    type: 'article',
+    publishedTime: post.publishedAt,
+    authors: [post.author],
+    keywords: [post.category, ...(post.tags || [])],
+    // Drafts stay out of the index even if someone has the URL.
+    noIndex: post.status !== 'Published'
+  });
 }
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
@@ -30,6 +56,34 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
+      <JsonLd
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description: post.seoDescription || post.excerpt,
+            image: absoluteImageUrl(post.coverImage),
+            url: absoluteUrl(`/blog/${post.slug}`),
+            datePublished: post.publishedAt,
+            dateModified: post.updatedAt || post.publishedAt,
+            articleSection: post.category,
+            keywords: (post.tags || []).join(', '),
+            author: { '@type': 'Person', name: post.author },
+            publisher: { '@id': `${getSiteUrl()}/#organization` },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': absoluteUrl(`/blog/${post.slug}`),
+              name: SITE_NAME
+            }
+          },
+          buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Blog', path: '/blog' },
+            { name: post.title, path: `/blog/${post.slug}` }
+          ])
+        ]}
+      />
       <Header />
 
       <main className="flex-1">
@@ -70,7 +124,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             {/* Featured Image */}
             <div className="relative h-80 sm:h-96 w-full rounded-3xl overflow-hidden shadow-xl border border-slate-200">
               <Image
-                src={post.coverImage}
+                src={resolveImageSrc(post.coverImage)}
                 alt={post.title}
                 fill
                 className="object-cover"

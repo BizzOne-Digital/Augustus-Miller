@@ -171,7 +171,7 @@ function BookingFormContent() {
               Book a Professional Service
             </h1>
             <p className="text-slate-600 text-sm mt-1">
-              Select your service, choose your preferred timing, and tell us about your job. We will confirm with an exact appointment window and transparent pricing.
+              Select your service, choose your preferred timing, and tell us about your job. We will confirm your appointment window and provide a written quote for your scope.
             </p>
           </div>
 
@@ -383,10 +383,33 @@ export default function BookingPage() {
               Official Appointment Dispatch
             </span>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-extrabold text-white">
-              Schedule Your Service Engagement
+              Book a Service
             </h1>
             <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              Select your service division, choose your preferred window, and our certified dispatch team will confirm your project scope with upfront pricing.
+              Schedule your appointment in three easy steps.
+            </p>
+
+            {/* Three-step process, per the client brief */}
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-left">
+              {[
+                { step: '1', label: 'Choose your service' },
+                { step: '2', label: 'Select date & time' },
+                { step: '3', label: 'Submit your request' }
+              ].map((item) => (
+                <li
+                  key={item.step}
+                  className="flex items-center gap-3 rounded-xl border border-[#C8973E]/30 bg-white/5 px-4 py-3 backdrop-blur-sm"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C8973E] text-sm font-bold text-[#0A2540]">
+                    {item.step}
+                  </span>
+                  <span className="text-sm font-semibold text-white">{item.label}</span>
+                </li>
+              ))}
+            </ol>
+
+            <p className="pt-2 text-sm text-[#DFC37C]">
+              A representative will confirm your booking within 24 hours.
             </p>
           </div>
         </section>

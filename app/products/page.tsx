@@ -6,17 +6,48 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getProducts } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, buildItemListJsonLd, buildProductJsonLd, generatePageMetadata } from '@/lib/seo';
+import JsonLd from '@/components/site/JsonLd';
+import { resolveImageSrc } from '@/lib/images';
 
-export const metadata = {
-  title: 'Products & Equipment | Miller Group of Company LLC',
-  description: 'Explore commercial equipment, safety gear, and specialized tools provided by Miller Group of Company LLC.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('products', DEFAULT_LOCALE, '/products');
+}
 
 export default async function ProductsPage() {
   const products = await getProducts();
+  const activeProducts = products.filter(p => p.active !== false);
+
+  // There is no /products/[slug] route, so each Product node points at its
+  // anchor on this listing page.
+  const productNodes = activeProducts.map(p =>
+    buildProductJsonLd({
+      name: p.name,
+      description: p.shortDescription || p.description,
+      image: p.images?.[0],
+      // Pre-launch products carry no Offer: advertising a price for something
+      // that cannot be bought yet is misleading in search results.
+      price: p.comingSoon ? undefined : p.price,
+      salePrice: p.comingSoon ? undefined : p.salePrice,
+      sku: p.sku,
+      path: `/products#${p.slug}`,
+      inStock: !p.comingSoon && (p.inventory ?? 0) > 0
+    })
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
+      {productNodes.length > 0 && (
+        <JsonLd
+          data={[
+            ...productNodes,
+            buildItemListJsonLd(
+              activeProducts.map(p => ({ name: p.name, path: `/products#${p.slug}` }))
+            )
+          ]}
+        />
+      )}
       <Header />
 
       <main className="flex-1">
@@ -35,7 +66,7 @@ export default async function ProductsPage() {
               Professional Tools & Hardware
             </h1>
             <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              Curated trade gear, commercial inspection kits, network hardware, and official Miller Group equipment engineered for durability and safety.
+              Coming soon — tools, equipment, digital services, and more. Register your interest below and we will contact you as items become available.
             </p>
           </div>
         </section>
@@ -47,25 +78,31 @@ export default async function ProductsPage() {
               {products.map((prod) => (
                 <div
                   key={prod.id}
-                  className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#C8973E]/50 transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+                  id={prod.slug}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-[#C8973E]/50 transition-all duration-300 overflow-hidden flex flex-col justify-between group scroll-mt-28"
                 >
                   <div>
                     <div className="relative h-64 w-full bg-slate-100 overflow-hidden">
                       <Image
-                        src={prod.images[0] || 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?q=80&w=800&auto=format&fit=crop'}
+                        src={resolveImageSrc(prod.images?.[0], 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?q=80&w=800&auto=format&fit=crop')}
                         alt={prod.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         referrerPolicy="no-referrer"
                       />
-                      {prod.comingSoon && (
-                        <div className="absolute top-3 left-3 bg-[#C8973E] text-[#0A2540] text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm">
-                          Available for Order
-                        </div>
-                      )}
+                      <div
+                        className={`absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shadow-sm ${
+                          prod.comingSoon
+                            ? 'bg-[#0A2540] text-[#DFC37C]'
+                            : 'bg-[#C8973E] text-[#0A2540]'
+                        }`}
+                      >
+                        {prod.comingSoon ? 'Coming Soon' : 'Available for Order'}
+                      </div>
+                      {/* Price is indicative only while a product is pre-launch. */}
                       <div className="absolute bottom-3 right-3 bg-white/95 px-3 py-1 rounded-full text-xs font-bold text-[#0A2540] shadow-sm">
-                        ${prod.price.toFixed(2)}
+                        {prod.comingSoon ? 'Price on request' : `$${prod.price.toFixed(2)}`}
                       </div>
                     </div>
 
@@ -93,7 +130,7 @@ export default async function ProductsPage() {
                       className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0A2540] hover:bg-[#153a63] text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm"
                     >
                       <Mail className="w-3.5 h-3.5 text-[#DFC37C]" />
-                      <span>Inquire / Request Purchase</span>
+                      <span>{prod.comingSoon ? 'Register Interest' : 'Inquire / Request Purchase'}</span>
                     </Link>
                   </div>
                 </div>

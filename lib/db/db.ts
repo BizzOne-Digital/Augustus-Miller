@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { StoredUploadModel } from '@/models';
 import {
   ServiceItem,
   Booking,
@@ -443,12 +444,83 @@ export async function updateSiteSettings(data: Partial<SiteSettings>): Promise<S
 }
 
 // UPLOADS
+//
+// Uploaded binaries are stored in MongoDB, never on the local filesystem, so
+// they survive redeploys and work on serverless hosts with a read-only disk.
+// When MONGODB_URI is not configured we fall back to the in-process memory
+// store, which is fine for local development but does NOT persist.
+
+export const UPLOAD_FOLDERS = ['products', 'gallery', 'pages', 'misc', 'team', 'blog'] as const;
+export type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
+
+/** Public URL prefix served by app/api/uploads/[folder]/[filename]/route.ts */
+export const UPLOAD_URL_PREFIX = '/api/uploads/';
+
+function mapUploadDoc(doc: {
+  _id: unknown;
+  folder: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  data?: Buffer | { buffer?: Buffer };
+  dataBase64?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}): StoredUpload {
+  // Mongoose can hand back either a Buffer or a Binary wrapper depending on
+  // whether the document came from a lean() query.
+  const raw = doc.data as Buffer | { buffer?: Buffer } | undefined;
+  const data = Buffer.isBuffer(raw) ? raw : raw?.buffer;
+
+  return {
+    id: String(doc._id),
+    folder: doc.folder,
+    filename: doc.filename,
+    mimeType: doc.mimeType,
+    size: doc.size,
+    url: doc.url,
+    data,
+    dataBase64: doc.dataBase64,
+    createdAt: (doc.createdAt || new Date()).toISOString(),
+    updatedAt: doc.updatedAt?.toISOString()
+  };
+}
+
 export async function getStoredUploads(): Promise<StoredUpload[]> {
+  if (await connectToDatabase()) {
+    try {
+      // Exclude the binary payloads - listings only need the metadata.
+      const docs = await StoredUploadModel.find({}, { data: 0, dataBase64: 0 })
+        .sort({ createdAt: -1 })
+        .lean();
+      return docs.map(d => mapUploadDoc(d as never));
+    } catch (error) {
+      console.error('getStoredUploads failed, falling back to memory store:', error);
+    }
+  }
+
   const store = initMemoryStore();
   return [...store.uploads].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function saveStoredUpload(item: Omit<StoredUpload, 'id' | 'createdAt'>): Promise<StoredUpload> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await StoredUploadModel.create({
+        folder: item.folder,
+        filename: item.filename,
+        mimeType: item.mimeType,
+        size: item.size,
+        url: item.url,
+        data: item.data
+      });
+      return mapUploadDoc(doc.toObject() as never);
+    } catch (error) {
+      console.error('saveStoredUpload failed, falling back to memory store:', error);
+    }
+  }
+
   const store = initMemoryStore();
   const newUpload: StoredUpload = {
     ...item,
@@ -460,14 +532,75 @@ export async function saveStoredUpload(item: Omit<StoredUpload, 'id' | 'createdA
 }
 
 export async function getStoredUploadByPath(folder: string, filename: string): Promise<StoredUpload | null> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await StoredUploadModel.findOne({ folder, filename }).lean();
+      if (doc) return mapUploadDoc(doc as never);
+    } catch (error) {
+      console.error('getStoredUploadByPath failed, falling back to memory store:', error);
+    }
+  }
+
   const store = initMemoryStore();
   return store.uploads.find(u => u.folder === folder && u.filename === filename) || null;
 }
 
 export async function deleteStoredUpload(id: string): Promise<boolean> {
+  if (await connectToDatabase()) {
+    try {
+      const result = await StoredUploadModel.findByIdAndDelete(id);
+      if (result) return true;
+    } catch (error) {
+      console.error('deleteStoredUpload failed, falling back to memory store:', error);
+    }
+  }
+
   const store = initMemoryStore();
   const initialLength = store.uploads.length;
   store.uploads = store.uploads.filter(u => u.id !== id);
+  return store.uploads.length < initialLength;
+}
+
+/**
+ * Parse a stored-upload URL into its folder/filename pair.
+ * Returns null for anything that is not one of our own upload URLs (external
+ * URLs, legacy `/uploads/...` disk paths, empty strings).
+ */
+export function parseUploadUrl(url: string | undefined | null): { folder: string; filename: string } | null {
+  if (!url || !url.startsWith(UPLOAD_URL_PREFIX)) return null;
+
+  const [folder, filename, ...rest] = url.slice(UPLOAD_URL_PREFIX.length).split('/');
+  if (!folder || !filename || rest.length > 0) return null;
+  if (folder.includes('..') || filename.includes('..')) return null;
+
+  return { folder, filename: filename.split('?')[0] };
+}
+
+/**
+ * Delete the binary behind an upload URL. Call this when an image is replaced or
+ * removed so orphaned binaries do not accumulate in the collection.
+ *
+ * No-op (returns false) for URLs this app does not own, so it is safe to call
+ * with whatever string happens to be on the document.
+ */
+export async function deleteStoredUploadByUrl(url: string | undefined | null): Promise<boolean> {
+  const parsed = parseUploadUrl(url);
+  if (!parsed) return false;
+
+  if (await connectToDatabase()) {
+    try {
+      const result = await StoredUploadModel.deleteOne(parsed);
+      if (result.deletedCount > 0) return true;
+    } catch (error) {
+      console.error('deleteStoredUploadByUrl failed, falling back to memory store:', error);
+    }
+  }
+
+  const store = initMemoryStore();
+  const initialLength = store.uploads.length;
+  store.uploads = store.uploads.filter(
+    u => !(u.folder === parsed.folder && u.filename === parsed.filename)
+  );
   return store.uploads.length < initialLength;
 }
 

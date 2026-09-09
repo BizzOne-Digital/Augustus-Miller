@@ -21,6 +21,16 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getServiceBySlug, getServices } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import JsonLd from '@/components/site/JsonLd';
+import { resolveImageSrc } from '@/lib/images';
+import {
+  DEFAULT_LOCALE,
+  buildBreadcrumbJsonLd,
+  buildMetadata,
+  buildServiceJsonLd,
+  noIndexMetadata
+} from '@/lib/seo';
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp,
@@ -32,14 +42,23 @@ const iconMap: Record<string, React.ElementType> = {
   Monitor
 };
 
-export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params;
   const service = await getServiceBySlug(slug);
-  if (!service) return { title: 'Service Not Found | Miller Group' };
-  return {
-    title: service.seoTitle || `${service.name} | Miller Group of Company LLC`,
-    description: service.seoDescription || service.shortDescription
-  };
+
+  if (!service) {
+    // Nothing to index at this URL.
+    return noIndexMetadata('Service Not Found');
+  }
+
+  return buildMetadata({
+    title: service.seoTitle || service.name,
+    description: service.seoDescription || service.shortDescription,
+    locale: DEFAULT_LOCALE,
+    path: `/services/${service.slug}`,
+    image: service.heroImage,
+    keywords: [service.name]
+  });
 }
 
 export default async function ServiceDetailPage(props: { params: Promise<{ slug: string }> }) {
@@ -56,13 +75,28 @@ export default async function ServiceDetailPage(props: { params: Promise<{ slug:
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
+      <JsonLd
+        data={[
+          buildServiceJsonLd({
+            name: service.name,
+            description: service.seoDescription || service.shortDescription,
+            image: service.heroImage,
+            path: `/services/${service.slug}`
+          }),
+          buildBreadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Services', path: '/services' },
+            { name: service.name, path: `/services/${service.slug}` }
+          ])
+        ]}
+      />
       <Header />
 
       <main className="flex-1">
         {/* Service Hero */}
         <section className="relative overflow-hidden bg-[#061426] text-white py-16 lg:py-24 px-4 sm:px-6 lg:px-8 border-b border-[#C8973E]/20">
           <HeroBackground
-            src={service.heroImage}
+            src={resolveImageSrc(service.heroImage)}
             alt={service.name}
             theme="deep-midnight"
           />

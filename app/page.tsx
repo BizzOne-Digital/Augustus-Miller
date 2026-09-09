@@ -33,6 +33,13 @@ import {
   Truck,
   Monitor
 } from 'lucide-react';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { resolveImageSrc } from '@/lib/images';
+
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('home', DEFAULT_LOCALE, '/');
+}
 
 const iconMap: Record<string, React.ElementType> = {
   TrendingUp,
@@ -68,8 +75,8 @@ export default async function HomePage() {
                 <ShieldCheck className="w-5 h-5 text-[#C8973E] transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Integrity First</span>
-                <span className="text-xs text-slate-500">Ethical & Transparent Practices</span>
+                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Integrity</span>
+                <span className="text-xs text-slate-500">Honest, ethical, and transparent service</span>
               </div>
             </StaggerItem>
 
@@ -78,8 +85,8 @@ export default async function HomePage() {
                 <Handshake className="w-5 h-5 text-[#C8973E] transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Proven Reliability</span>
-                <span className="text-xs text-slate-500">Consistent & Timely Execution</span>
+                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Reliability</span>
+                <span className="text-xs text-slate-500">Consistent, dependable, and timely delivery</span>
               </div>
             </StaggerItem>
 
@@ -88,8 +95,8 @@ export default async function HomePage() {
                 <Award className="w-5 h-5 text-[#C8973E] transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Strict Quality Standards</span>
-                <span className="text-xs text-slate-500">Professional Workmanship</span>
+                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Quality</span>
+                <span className="text-xs text-slate-500">High standards in every project</span>
               </div>
             </StaggerItem>
 
@@ -98,8 +105,8 @@ export default async function HomePage() {
                 <Users className="w-5 h-5 text-[#C8973E] transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Long-Term Commitment</span>
-                <span className="text-xs text-slate-500">Lasting Client Value</span>
+                <span className="font-bold text-slate-900 block text-xs uppercase tracking-wider transition-colors duration-200 group-hover:text-[#0A2540]">Commitment</span>
+                <span className="text-xs text-slate-500">Customer satisfaction and long-term relationships</span>
               </div>
             </StaggerItem>
           </StaggerContainer>
@@ -124,7 +131,7 @@ export default async function HomePage() {
                 </h2>
                 <div className="space-y-4 text-slate-600 text-base sm:text-[17px] leading-[1.7]">
                   <p>
-                    <strong className="text-slate-900 font-semibold">Miller Group of Company LLC</strong> was established to eliminate the frustration of managing disconnected contractors, advisors, and service vendors. Founded by <strong className="text-slate-900 font-semibold">Augustus Miller</strong>, the company combines seasoned business expertise with hands-on technical trades to deliver cohesive, long-lasting outcomes.
+                    <strong className="text-slate-900 font-semibold">Miller Group of Company LLC</strong> is your one-stop partner for dependable, professional, and customer-focused services. We combine technical expertise, business knowledge, and hands-on experience to deliver solutions that help individuals, businesses, and communities grow.
                   </p>
                   <p>
                     Whether assisting a growing startup with financial budgeting, remodeling a commercial facility, screening tenants for an investor, fixing urgent residential plumbing, or managing regional cargo transport — our clients deal with a single, highly accountable leadership team.
@@ -135,13 +142,13 @@ export default async function HomePage() {
                   <div className="p-5 rounded-xl bg-[#F8FAFC] border border-slate-200/80 shadow-[0_2px_8px_rgba(10,37,64,0.02)]">
                     <span className="font-serif font-bold text-base text-[#0A2540] block mb-1.5">Our Mission</span>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      To deliver innovative, reliable, and high-quality professional services that create lasting value for clients through integrity, excellence, and continuous improvement.
+                      {settings.mission}
                     </p>
                   </div>
                   <div className="p-5 rounded-xl bg-[#F8FAFC] border border-slate-200/80 shadow-[0_2px_8px_rgba(10,37,64,0.02)]">
                     <span className="font-serif font-bold text-base text-[#0A2540] block mb-1.5">Our Vision</span>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      To be recognized as a premier diversified service company known statewide and nationally for excellence across every division we operate.
+                      {settings.vision}
                     </p>
                   </div>
                 </div>
@@ -218,7 +225,7 @@ export default async function HomePage() {
                       {/* Image Header */}
                       <div className="relative h-48 w-full overflow-hidden bg-slate-900">
                         <Image
-                          src={svc.heroImage}
+                          src={resolveImageSrc(svc.heroImage)}
                           alt={svc.name}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -359,7 +366,7 @@ export default async function HomePage() {
                   <span className="text-2xl sm:text-3xl font-serif font-bold text-[#C8973E] tracking-tight block">03</span>
                   <h3 className="font-serif font-bold text-lg text-[#0A2540]">Skilled Execution</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    Our certified tradesmen and consultants execute the scope with high safety standards and active supervisory checks.
+                    Our tradesmen and consultants execute the scope with high safety standards and active supervisory checks.
                   </p>
                 </div>
               </StaggerItem>

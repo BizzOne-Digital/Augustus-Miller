@@ -5,11 +5,12 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getTestimonials } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Client Testimonials | Miller Group of Company LLC',
-  description: 'Read reviews and testimonials from business owners, landlords, and homeowners who trust Miller Group.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('testimonials', DEFAULT_LOCALE, '/testimonials');
+}
 
 export default async function TestimonialsPage() {
   const testimonials = await getTestimonials();

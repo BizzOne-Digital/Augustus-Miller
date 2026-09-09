@@ -6,11 +6,13 @@ import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
 import HeroBackground from '@/components/site/HeroBackground';
 import { getTeam } from '@/lib/db/db';
+import type { Metadata } from 'next';
+import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { resolveImageSrc } from '@/lib/images';
 
-export const metadata = {
-  title: 'Leadership & Team | Miller Group of Company LLC',
-  description: 'Meet Augustus Miller and the executive leadership team behind Miller Group of Company LLC.'
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generatePageMetadata('team', DEFAULT_LOCALE, '/team');
+}
 
 export default async function TeamPage() {
   const team = await getTeam();
@@ -52,7 +54,7 @@ export default async function TeamPage() {
                   <div>
                     <div className="relative h-72 w-full bg-slate-900 overflow-hidden">
                       <Image
-                        src={member.photo}
+                        src={resolveImageSrc(member.photo)}
                         alt={member.name}
                         fill
                         className="object-cover object-top hover:scale-105 transition-transform duration-500"
@@ -105,7 +107,7 @@ export default async function TeamPage() {
                   Join Our Multi-Disciplinary Team
                 </h3>
                 <p className="text-slate-300 text-sm leading-relaxed">
-                  We are always seeking licensed tradesmen, certified IT technicians, and experienced business consultants to uphold our high service standards.
+                  We are always seeking skilled tradesmen, IT technicians, and experienced business consultants to uphold our high service standards.
                 </p>
               </div>
 

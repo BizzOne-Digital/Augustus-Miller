@@ -10,9 +10,9 @@ import {
   ShieldCheck,
   MapPin,
   Handshake,
-  Sparkles
+  Sparkles,
+  Phone
 } from 'lucide-react';
-import MillerLogo from './MillerLogo';
 import { RotatingTagline } from './ScrollReveal';
 
 export const HeroMotion: React.FC = () => {
@@ -21,7 +21,7 @@ export const HeroMotion: React.FC = () => {
   const divisionPromises = [
     'Strategic Business Consulting & Capital Planning',
     'Full-Service Property Rental & Asset Management',
-    'Licensed General Construction & Facility Remodeling',
+    'General Construction & Facility Remodeling',
     'Urgent Plumbing, Electrical & Maintenance Repairs',
     'Precision Residential & Commercial Handyman Services',
     'Statewide Cargo Transportation & Dedicated Logistics',
@@ -36,9 +36,9 @@ export const HeroMotion: React.FC = () => {
       {/* Hero Background Image with Cinematic Reveal and Subtle Brand Overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <motion.div
-          initial={shouldReduceMotion ? { scale: 1, opacity: 0.22 } : { scale: 1.04, opacity: 0 }}
-          animate={{ scale: 1, opacity: 0.22 }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          initial={shouldReduceMotion ? { scale: 1, opacity: 0.8 } : { scale: 1.06, opacity: 0 }}
+          animate={{ scale: 1, opacity: 0.8 }}
+          transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full h-full"
         >
           <Image
@@ -51,20 +51,22 @@ export const HeroMotion: React.FC = () => {
             referrerPolicy="no-referrer"
           />
         </motion.div>
-        {/* Multi-layered brand gradient overlay ensuring 100% crisp typography */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#061426] via-[#061426]/92 to-[#061426]/80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#061426] via-transparent to-[#061426]/80" />
+        {/* Lightened brand scrim: architecture stays visible, headline stays crisp */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#061426]/88 via-[#061426]/55 to-[#061426]/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#061426]/92 via-transparent to-[#061426]/45" />
       </div>
 
       {/* Subtle architectural grid / ambient glow */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#DFC37C_1px,transparent_1px)] [background-size:24px_24px] z-0" />
-      <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-[#C8973E]/10 rounded-full blur-3xl pointer-events-none z-0" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#0A2540] rounded-full blur-3xl pointer-events-none z-0" />
+      <div className="absolute inset-0 opacity-[0.07] pointer-events-none bg-[radial-gradient(#DFC37C_1px,transparent_1px)] [background-size:24px_24px] z-0" />
+      <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-[#C8973E]/12 rounded-full blur-3xl pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#0A2540]/55 rounded-full blur-3xl pointer-events-none z-0" />
+      {/* Gold hairline at the hero base */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#C8973E]/50 to-transparent pointer-events-none z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-          {/* Left Column: Value Proposition & Staggered Motion */}
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+        <div className="flex flex-col">
+          {/* Value Proposition & Staggered Motion */}
+          <div className="w-full max-w-4xl space-y-6 text-center lg:text-left">
             {/* 01. Motto Eyebrow Pill - gentle slide down */}
             <motion.div
               initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -12 }}
@@ -83,7 +85,7 @@ export const HeroMotion: React.FC = () => {
               transition={{ duration: 0.7, delay: 0.1, ease: easeCurve }}
               className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-serif font-bold tracking-tight text-white leading-[1.12]"
             >
-              Delivering Innovative, Reliable, and <span className="text-[#DFC37C]">High-Quality</span> Professional Services.
+              Delivering Innovative, Reliable, and <span className="text-[#DFC37C]">High-Quality</span> Professional Services That Create Lasting Value.
             </motion.h1>
 
             {/* 03. Editorial Rotating Division Focus */}
@@ -111,7 +113,7 @@ export const HeroMotion: React.FC = () => {
               transition={{ duration: 0.65, delay: 0.3, ease: easeCurve }}
               className="text-slate-300 text-base sm:text-lg lg:text-[17px] font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0"
             >
-              Miller Group of Company LLC is a diversified service enterprise providing trusted solutions in business consultancy, general construction, property management, repairs, handyman, transportation, and IT services across Georgia and nationwide.
+              A diversified service company providing trusted solutions in business consultancy, construction, property management, repairs, transportation, and IT services.
             </motion.p>
 
             {/* 05. Dual Action Buttons - staggered entrance with hover micro-interaction */}
@@ -135,6 +137,14 @@ export const HeroMotion: React.FC = () => {
               >
                 <Calendar className="w-3.5 h-3.5 text-[#DFC37C]" />
                 <span className="group-hover:text-[#DFC37C] transition-colors">Book a Service</span>
+              </Link>
+
+              <Link
+                href="/contact"
+                className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-white border border-[#C8973E]/50 hover:border-[#C8973E] hover:bg-[#C8973E]/10 font-bold text-xs uppercase tracking-[0.08em] transition-all duration-200 active:scale-[0.98]"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#DFC37C]" />
+                <span className="group-hover:text-[#DFC37C] transition-colors">Contact Us Today</span>
               </Link>
             </motion.div>
 
@@ -170,41 +180,6 @@ export const HeroMotion: React.FC = () => {
               </div>
             </motion.div>
           </div>
-
-          {/* Right Column: Official Crest & Emblem Lockup - synchronized entrance */}
-          <motion.div
-            initial={shouldReduceMotion ? { opacity: 1, scale: 1 } : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.25, ease: easeCurve }}
-            className="lg:col-span-5 flex flex-col items-center justify-center"
-          >
-            <div className="relative p-7 sm:p-9 bg-[#0B213B]/90 border border-[#C8973E]/35 rounded-3xl shadow-2xl backdrop-blur-sm text-center max-w-md w-full hover:border-[#C8973E]/55 transition-colors duration-300">
-              <div className="mb-4">
-                <MillerLogo variant="full" size="xl" width={260} height={260} />
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-slate-700/60">
-                <p className="text-xs font-bold tracking-[0.2em] text-[#DFC37C] uppercase">
-                  BUILDING SOLUTIONS. DELIVERING VALUE.
-                </p>
-                <p className="text-xs text-slate-300 mt-1">
-                  Miller Group of Company LLC • Georgia Registered Enterprise
-                </p>
-              </div>
-
-              {/* Division quick pills */}
-              <div className="mt-5 flex flex-wrap justify-center gap-1.5">
-                {['Consultancy', 'Property', 'Construction', 'Repairs', 'Handyman', 'Logistics', 'IT Systems'].map((item) => (
-                  <span
-                    key={item}
-                    className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[#07192F] border border-slate-700/80 text-slate-300 hover:text-white hover:border-[#C8973E]/50 transition-colors"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </section>
