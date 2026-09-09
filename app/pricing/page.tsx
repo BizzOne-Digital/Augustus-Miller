@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: 'Service Pricing',
     description:
-      'Miller Group of Company LLC pricing is customized based on project size, materials, labour, and service requirements. Request a tailored quote for any of our seven divisions.',
+      'Miller Group of Company LLC pricing is customized based on project size, materials, labor, and service requirements. Request a tailored quote for any of our seven divisions.',
     locale: DEFAULT_LOCALE,
     path: '/pricing',
     keywords: ['Miller Group pricing', 'service quote Atlanta']
@@ -33,7 +33,7 @@ export default async function PricingPage() {
   const factors = [
     { title: 'Project Size & Scope', detail: 'The amount of work involved, the areas covered, and the total hours or duration required.' },
     { title: 'Materials', detail: 'Grade, quantity, and current supply cost of any materials, parts, or hardware needed.' },
-    { title: 'Labour', detail: 'The trades and specialists required, and whether the work is scheduled or urgent.' },
+    { title: 'Labor', detail: 'The trades and specialists required, and whether the work is scheduled or urgent.' },
     { title: 'Service Requirements', detail: 'Access constraints, permitting, compliance requirements, and any ongoing support you need.' }
   ];
 
@@ -57,7 +57,7 @@ export default async function PricingPage() {
               Service Pricing Overview
             </h1>
             <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-              Our pricing is customized based on project size, materials, labour, and service
+              Our pricing is customized based on project size, materials, labor, and service
               requirements. Contact us for a tailored quote.
             </p>
           </div>

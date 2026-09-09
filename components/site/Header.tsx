@@ -150,7 +150,7 @@ export const Header: React.FC = () => {
                     : 'text-slate-600 hover:text-[#0A2540] hover:bg-slate-50'
                 }`}
               >
-                <span>7 Services</span>
+                <span>Services</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform duration-200" />
                 <span
                   className={`absolute bottom-1 left-2 right-6 xl:left-3 xl:right-7 h-[1.5px] rounded-full bg-[#C8973E] transition-all duration-200 ${
@@ -280,7 +280,7 @@ export const Header: React.FC = () => {
             </Link>
             <div className="border-t border-slate-100 my-2 pt-2">
               <span className="block px-3.5 text-[11px] font-bold text-[#C8973E] uppercase tracking-[0.1em] mb-1">
-                Our 7 Core Services
+                Our Core Services
               </span>
               <div className="pl-1 space-y-0.5">
                 {serviceLinks.map((item) => (

@@ -63,12 +63,13 @@ export default async function TeamPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540] via-transparent to-transparent opacity-80" />
                       <div className="absolute bottom-4 left-4 right-4 text-white">
-                        <span className="text-xs font-bold text-[#DFC37C] tracking-wider uppercase block">
-                          {member.position}
-                        </span>
+                        {/* Name first, then title - matches the brief's "Name - Title" order */}
                         <h2 className="text-xl font-serif font-bold text-white">
                           {member.name}
                         </h2>
+                        <span className="text-xs font-bold text-[#DFC37C] tracking-wider uppercase block mt-0.5">
+                          &mdash; {member.position}
+                        </span>
                       </div>
                     </div>
 

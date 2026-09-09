@@ -131,7 +131,7 @@ export default async function HomePage() {
                 </h2>
                 <div className="space-y-4 text-slate-600 text-base sm:text-[17px] leading-[1.7]">
                   <p>
-                    <strong className="text-slate-900 font-semibold">Miller Group of Company LLC</strong> is your one-stop partner for dependable, professional, and customer-focused services. We combine technical expertise, business knowledge, and hands-on experience to deliver solutions that help individuals, businesses, and communities grow.
+                    <strong className="text-slate-900 font-semibold">Miller Group of Company LLC</strong> is your one-stop partner for dependable, professional, and customer focused services. We combine technical expertise, business knowledge, and hands on experience to deliver solutions that help individuals, businesses, and communities grow.
                   </p>
                   <p>
                     Whether assisting a growing startup with financial budgeting, remodeling a commercial facility, screening tenants for an investor, fixing urgent residential plumbing, or managing regional cargo transport — our clients deal with a single, highly accountable leadership team.

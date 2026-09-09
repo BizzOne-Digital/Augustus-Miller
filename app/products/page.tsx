@@ -63,7 +63,7 @@ export default async function ProductsPage() {
               Division Products & Equipment
             </span>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-extrabold text-white">
-              Professional Tools & Hardware
+              Featured Products
             </h1>
             <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Coming soon — tools, equipment, digital services, and more. Register your interest below and we will contact you as items become available.

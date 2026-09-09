@@ -48,7 +48,7 @@ export default async function ServicesPage() {
         {/* Page Hero */}
         <section className="bg-[#0A2540] text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b border-[#C8973E]/20">
           <HeroBackground
-            src="https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?q=80&w=2070&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1517581177682-a085bb7ffb15?q=80&w=2070&auto=format&fit=crop"
             alt="Miller Group 7 Dedicated Service Divisions"
             theme="dark-navy"
           />

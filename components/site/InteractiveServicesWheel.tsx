@@ -69,7 +69,7 @@ export const servicesData: DivisionInfo[] = [
     badgeBg: 'bg-[#0A2540]',
     color: '#C8973E',
     tagline: 'Residential builds, commercial remodeling, and structural additions.',
-    image: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?q=80&w=1000&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1517581177682-a085bb7ffb15?q=80&w=1000&auto=format&fit=crop',
     highlights: ['Residential & Commercial Builds', 'Interior & Exterior Remodeling', 'Site Grading & Foundations', 'Permitting & Project Oversight']
   },
   {

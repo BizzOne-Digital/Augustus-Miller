@@ -136,10 +136,10 @@ function ContactFormContent() {
                   Service Area
                 </span>
                 <span className="text-base font-bold text-[#0A2540]">
-                  Statewide Georgia & Metro Atlanta
+                  Metro Atlanta &bull; Surrounding Counties &bull; Statewide Georgia
                 </span>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Fulton, Gwinnett, Cobb, DeKalb, Clayton, and surrounding counties
+                  Nationwide &amp; International consulting available.
                 </p>
               </div>
             </div>
