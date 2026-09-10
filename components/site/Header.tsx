@@ -27,6 +27,7 @@ export const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesDropdownOpen, setServicesDropdownOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export const Header: React.FC = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setServicesDropdownOpen(false);
+    setMobileServicesOpen(false);
   }, [pathname]);
 
   const serviceLinks = [
@@ -261,7 +263,8 @@ export const Header: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-[#C8973E]/20 px-4 pt-4 pb-7 space-y-1 shadow-[0_24px_48px_rgba(10,37,64,0.15)] animate-in slide-in-from-top-2 duration-200">
+          <div className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-[#C8973E]/20 shadow-[0_24px_48px_rgba(10,37,64,0.15)] animate-in slide-in-from-top-2 duration-200">
+            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto overscroll-contain px-4 pt-4 pb-7 space-y-1">
             <Link
               href="/"
               className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
@@ -278,22 +281,60 @@ export const Header: React.FC = () => {
             >
               About
             </Link>
-            <div className="border-t border-slate-100 my-2 pt-2">
-              <span className="block px-3.5 text-[11px] font-bold text-[#C8973E] uppercase tracking-[0.1em] mb-1">
-                Our Core Services
-              </span>
-              <div className="pl-1 space-y-0.5">
-                {serviceLinks.map((item) => (
+
+            {/* Services Accordion */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setMobileServicesOpen(!mobileServicesOpen)}
+                aria-expanded={mobileServicesOpen}
+                aria-controls="mobile-services-panel"
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                  pathname.startsWith('/services')
+                    ? 'text-[#0A2540] bg-[#0A2540]/5'
+                    : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <span>Services</span>
+                <ChevronDown
+                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                    mobileServicesOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {mobileServicesOpen && (
+                <div
+                  id="mobile-services-panel"
+                  className="mt-1 ml-2 pl-2 border-l border-[#C8973E]/30 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-150"
+                >
                   <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block px-3.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-[#0A2540] hover:bg-slate-50 transition-colors"
+                    href="/services"
+                    className="block px-3.5 py-2 rounded-lg text-[11px] font-bold text-[#C8973E] uppercase tracking-[0.1em] hover:bg-slate-50 transition-colors"
                   >
-                    {item.name}
+                    All Services
                   </Link>
-                ))}
-              </div>
+                  {serviceLinks.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                          pathname === item.href
+                            ? 'text-[#0A2540] bg-[#0A2540]/5'
+                            : 'text-slate-600 hover:text-[#0A2540] hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0 text-[#0A2540]/70" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
             <Link
               href="/team"
               className={`block px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
@@ -364,6 +405,7 @@ export const Header: React.FC = () => {
               >
                 Request a Quote
               </Link>
+            </div>
             </div>
           </div>
         )}
