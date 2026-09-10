@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Calendar,
   ArrowRight,
-  Shield,
   TrendingUp,
   Building,
   HardHat,
@@ -85,13 +84,6 @@ export const Header: React.FC = () => {
             <span className="hidden lg:inline text-[#DFC37C] font-serif italic tracking-wide">
               One Group. Many Solutions. Endless Possibilities.
             </span>
-            <Link
-              href="/admin/login"
-              className="text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors duration-200 pl-3 border-l border-slate-700/80"
-            >
-              <Shield className="w-3 h-3 text-[#C8973E]" />
-              <span>Admin Portal</span>
-            </Link>
           </div>
         </div>
       </div>
