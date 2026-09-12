@@ -2,6 +2,11 @@ import type { MetadataRoute } from 'next';
 import { getBlogPosts, getServices } from '@/lib/db/db';
 import { absoluteUrl } from '@/lib/seo';
 
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
+
 /** Static public routes. Admin, API, cart, checkout, and account are excluded. */
 const STATIC_ROUTES: { path: string; changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency']; priority: number }[] = [
   { path: '/', changeFrequency: 'weekly', priority: 1.0 },

@@ -21,7 +21,13 @@ import MillerLogo from '@/components/site/MillerLogo';
 import HeroBackground from '@/components/site/HeroBackground';
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
-import { getSiteSettings } from '@/lib/db/db';
+import { getSiteSettings, getTeam } from '@/lib/db/db';
+import { resolveImageSrc } from '@/lib/images';
+
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generatePageMetadata('about', DEFAULT_LOCALE, '/about');
@@ -29,6 +35,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AboutPage() {
   const settings = await getSiteSettings();
+  const team = await getTeam();
+
+  // The founder card mirrors the first team member, so editing that record in
+  // the admin dashboard updates this section too.
+  const founder = team[0];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased">
@@ -119,8 +130,8 @@ export default async function AboutPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
                 <div className="relative h-80 w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-100">
                   <Image
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop"
-                    alt="Augustus Miller - Founder & CEO"
+                    src={resolveImageSrc(founder?.photo)}
+                    alt={`${founder?.name || settings.founderName} - ${founder?.position || 'Founder & CEO'}`}
                     fill
                     className="object-cover object-top"
                     sizes="(max-width: 1024px) 100vw, 40vw"
@@ -130,9 +141,11 @@ export default async function AboutPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540] via-transparent to-transparent opacity-80" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">
                     <span className="text-xs text-[#DFC37C] font-semibold tracking-wider uppercase block">
-                      Founder & Chief Executive Officer
+                      {founder?.position || 'Founder & Chief Executive Officer'}
                     </span>
-                    <h3 className="text-2xl font-serif font-bold">Augustus Miller</h3>
+                    <h3 className="text-2xl font-serif font-bold">
+                      {founder?.name || settings.founderName}
+                    </h3>
                   </div>
                 </div>
 

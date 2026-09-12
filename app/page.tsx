@@ -23,7 +23,7 @@ import MillerLogo from '@/components/site/MillerLogo';
 import InteractiveServicesWheel from '@/components/site/InteractiveServicesWheel';
 import HeroMotion from '@/components/site/HeroMotion';
 import { ScrollReveal, StaggerContainer, StaggerItem } from '@/components/site/ScrollReveal';
-import { getTestimonials, getSiteSettings, getServices } from '@/lib/db/db';
+import { getTestimonials, getSiteSettings, getServices, getTeam } from '@/lib/db/db';
 import {
   TrendingUp,
   Building,
@@ -36,6 +36,11 @@ import {
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
 import { resolveImageSrc } from '@/lib/images';
+
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generatePageMetadata('home', DEFAULT_LOCALE, '/');
@@ -55,6 +60,27 @@ export default async function HomePage() {
   const testimonials = await getTestimonials();
   const settings = await getSiteSettings();
   const services = await getServices();
+  const team = await getTeam();
+
+  // The founder card mirrors the first team member, so editing that record in
+  // the admin dashboard updates this section too.
+  const founder = team[0];
+
+  // Only active divisions appear on the home page, in admin display order.
+  const divisions = services
+    .filter(s => s.active)
+    .map(s => ({
+      id: s.id,
+      slug: s.slug,
+      name: s.name,
+      slogan: s.divisionSlogan,
+      tagline: s.shortDescription,
+      image: s.heroImage,
+      iconName: s.iconName,
+      badgeBg: 'bg-[#0A2540]',
+      color: s.accentColor,
+      highlights: (s.includedServices || []).slice(0, 4)
+    }));
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F9FAFC] text-slate-800 antialiased selection:bg-[#C8973E]/20 selection:text-[#0A2540]">
@@ -114,7 +140,7 @@ export default async function HomePage() {
 
         {/* 02. INTERACTIVE 7 SERVICES SHOWCASE (Direct recreation of miller services.jpg) */}
         <section id="services-showcase">
-          <InteractiveServicesWheel />
+          <InteractiveServicesWheel divisions={divisions} />
         </section>
 
         {/* 03. COMPANY OVERVIEW (Editorial Section) */}
@@ -169,8 +195,8 @@ export default async function HomePage() {
                 <div className="bg-[#0A2540] text-white rounded-2xl p-7 sm:p-8 shadow-xl border border-[#C8973E]/35 relative overflow-hidden">
                   <div className="relative h-72 w-full rounded-xl overflow-hidden mb-6 border border-slate-700/80">
                     <Image
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop"
-                      alt="Augustus Miller - Founder & CEO"
+                      src={resolveImageSrc(founder?.photo)}
+                      alt={`${founder?.name || settings.founderName} - ${founder?.position || 'Founder & CEO'}`}
                       fill
                       className="object-cover object-top"
                       sizes="(max-width: 1024px) 100vw, 33vw"
@@ -180,8 +206,12 @@ export default async function HomePage() {
                   <span className="text-[11px] font-bold text-[#DFC37C] tracking-[0.2em] uppercase block mb-1">
                     Leadership
                   </span>
-                  <h3 className="text-2xl font-serif font-bold text-white">Augustus Miller</h3>
-                  <p className="text-sm text-slate-300 font-medium mb-3">Founder & Chief Executive Officer</p>
+                  <h3 className="text-2xl font-serif font-bold text-white">
+                    {founder?.name || settings.founderName}
+                  </h3>
+                  <p className="text-sm text-slate-300 font-medium mb-3">
+                    {founder?.position || 'Founder & Chief Executive Officer'}
+                  </p>
                   <p className="text-xs text-slate-400 leading-relaxed mb-6 italic">
                     &ldquo;Our commitment is simple: treat every client’s property, business, and timeline with the respect and precision we would expect ourselves.&rdquo;
                   </p>
@@ -463,16 +493,30 @@ export default async function HomePage() {
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-200/80">
-                      <span className="font-serif font-bold text-[#0A2540] text-sm block">
-                        {test.customerName}
-                      </span>
-                      <span className="text-xs text-slate-500 block mt-0.5">
-                        {test.customerRole} {test.company ? `• ${test.company}` : ''}
-                      </span>
-                      <span className="text-[11px] text-[#C8973E] font-medium block mt-1">
-                        Service: {test.serviceCategory}
-                      </span>
+                    <div className="pt-4 border-t border-slate-200/80 flex items-start gap-3">
+                      {test.avatarUrl?.trim() && (
+                        <div className="relative w-11 h-11 shrink-0 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+                          <Image
+                            src={resolveImageSrc(test.avatarUrl)}
+                            alt={test.customerName}
+                            fill
+                            sizes="44px"
+                            className="object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <span className="font-serif font-bold text-[#0A2540] text-sm block">
+                          {test.customerName}
+                        </span>
+                        <span className="text-xs text-slate-500 block mt-0.5">
+                          {test.customerRole} {test.company ? `• ${test.company}` : ''}
+                        </span>
+                        <span className="text-[11px] text-[#C8973E] font-medium block mt-1">
+                          Service: {test.serviceCategory}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </StaggerItem>

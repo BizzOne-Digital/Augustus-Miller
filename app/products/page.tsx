@@ -11,6 +11,11 @@ import { DEFAULT_LOCALE, buildItemListJsonLd, buildProductJsonLd, generatePageMe
 import JsonLd from '@/components/site/JsonLd';
 import { resolveImageSrc } from '@/lib/images';
 
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   return generatePageMetadata('products', DEFAULT_LOCALE, '/products');
 }

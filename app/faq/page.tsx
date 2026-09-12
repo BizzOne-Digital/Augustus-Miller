@@ -9,6 +9,11 @@ import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, buildFaqJsonLd, generatePageMetadata } from '@/lib/seo';
 import JsonLd from '@/components/site/JsonLd';
 
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   return generatePageMetadata('faq', DEFAULT_LOCALE, '/faq');
 }

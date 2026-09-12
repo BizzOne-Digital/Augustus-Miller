@@ -8,6 +8,11 @@ import { getServices } from '@/lib/db/db';
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, buildMetadata } from '@/lib/seo';
 
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: 'Service Pricing',

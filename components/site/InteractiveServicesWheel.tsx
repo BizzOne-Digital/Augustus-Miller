@@ -22,12 +22,17 @@ import {
 import MillerLogo from './MillerLogo';
 import { resolveImageSrc } from '@/lib/images';
 
-interface DivisionInfo {
+/**
+ * A division as rendered by the wheel. Everything here is serialisable so the
+ * home page can build it from the database on the server and hand it to this
+ * client component - the icon travels as a name, not as a component.
+ */
+export interface DivisionInfo {
   id: string;
   slug: string;
   name: string;
   slogan: string;
-  icon: React.ElementType;
+  iconName: string;
   badgeBg: string;
   color: string;
   tagline: string;
@@ -35,13 +40,41 @@ interface DivisionInfo {
   highlights: string[];
 }
 
-export const servicesData: DivisionInfo[] = [
+/** Icons available to a service record's `iconName`. */
+const DIVISION_ICONS: Record<string, React.ElementType> = {
+  TrendingUp,
+  Building,
+  HardHat,
+  Wrench,
+  Hammer,
+  Truck,
+  Monitor
+};
+
+const DEFAULT_DIVISION_ICON = Wrench;
+
+/** Renders a service record's icon by name, falling back to a generic one. */
+function DivisionIcon({ name, className }: { name: string; className?: string }) {
+  const Icon = DIVISION_ICONS[name] || DEFAULT_DIVISION_ICON;
+  return <Icon className={className} />;
+}
+
+/** Two-digit division numbering, e.g. 3 -> "03". */
+function pad(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/**
+ * Shown only when the database returns no services at all (first run, or the
+ * database is unreachable). Admin edits always win over these.
+ */
+const FALLBACK_DIVISIONS: DivisionInfo[] = [
   {
     id: 'srv-1',
     slug: 'financial-consulting',
     name: 'Financial & Small Business Consultancy',
     slogan: 'Smart Advice. Stronger Business.',
-    icon: TrendingUp,
+    iconName: 'TrendingUp',
     badgeBg: 'bg-[#0A2540]',
     color: '#C8973E',
     tagline: 'Strategic budgeting, capital planning, and growth roadmaps.',
@@ -53,7 +86,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'property-management',
     name: 'Property Rental & Management',
     slogan: 'Quality Properties. Trusted Service.',
-    icon: Building,
+    iconName: 'Building',
     badgeBg: 'bg-[#C8973E]',
     color: '#0A2540',
     tagline: 'Complete tenant placement, lease management, and asset care.',
@@ -65,7 +98,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'construction',
     name: 'General Construction',
     slogan: 'Building Dreams. Creating Legacies.',
-    icon: HardHat,
+    iconName: 'HardHat',
     badgeBg: 'bg-[#0A2540]',
     color: '#C8973E',
     tagline: 'Residential builds, commercial remodeling, and structural additions.',
@@ -77,7 +110,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'repairs-maintenance',
     name: 'Repairs & Maintenance',
     slogan: 'Fixing Today. Securing Tomorrow.',
-    icon: Wrench,
+    iconName: 'Wrench',
     badgeBg: 'bg-[#C8973E]',
     color: '#0A2540',
     tagline: 'Plumbing, electrical, drywall, and structural maintenance.',
@@ -89,7 +122,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'handyman',
     name: 'Handyman Services',
     slogan: 'No Job Too Small. We Do It All.',
-    icon: Hammer,
+    iconName: 'Hammer',
     badgeBg: 'bg-[#0A2540]',
     color: '#C8973E',
     tagline: 'TV mounting, furniture assembly, lighting, and home punch-lists.',
@@ -101,7 +134,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'transportation',
     name: 'Transportation Services',
     slogan: 'Safe. Reliable. On Time. Every Time.',
-    icon: Truck,
+    iconName: 'Truck',
     badgeBg: 'bg-[#C8973E]',
     color: '#0A2540',
     tagline: 'Cargo delivery, equipment transport, and moving assistance.',
@@ -113,7 +146,7 @@ export const servicesData: DivisionInfo[] = [
     slug: 'it-services',
     name: 'IT Services',
     slogan: 'Smart Technology. Stronger Connections. Better Business.',
-    icon: Monitor,
+    iconName: 'Monitor',
     badgeBg: 'bg-[#0A2540]',
     color: '#C8973E',
     tagline: 'Network setup, cybersecurity, custom websites, and tech support.',
@@ -122,9 +155,18 @@ export const servicesData: DivisionInfo[] = [
   }
 ];
 
-export const InteractiveServicesWheel: React.FC = () => {
+interface InteractiveServicesWheelProps {
+  /** Divisions from the database. Falls back to the bundled list when empty. */
+  divisions?: DivisionInfo[];
+}
+
+export const InteractiveServicesWheel: React.FC<InteractiveServicesWheelProps> = ({
+  divisions
+}) => {
+  const data = divisions && divisions.length > 0 ? divisions : FALLBACK_DIVISIONS;
   const [activeIdx, setActiveIdx] = useState<number>(0);
-  const activeService = servicesData[activeIdx];
+  // The admin can delete a division, so clamp rather than indexing past the end.
+  const activeService = data[Math.min(activeIdx, data.length - 1)];
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -137,7 +179,7 @@ export const InteractiveServicesWheel: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#C8973E]/15 border border-[#C8973E]/30 text-[#DFC37C] text-[11px] font-bold tracking-[0.12em] uppercase mb-4">
-            Official 7 Business Divisions
+            Official {data.length} Business Divisions
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight text-white mb-4">
             One Group. <span className="text-[#DFC37C]">Seven Core Services.</span>
@@ -149,8 +191,7 @@ export const InteractiveServicesWheel: React.FC = () => {
 
         {/* The 7 Division Interactive Tabs / Wheel Selector */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-10">
-          {servicesData.map((svc, idx) => {
-            const Icon = svc.icon;
+          {data.map((svc, idx) => {
             const isSelected = idx === activeIdx;
             return (
               <button
@@ -167,13 +208,13 @@ export const InteractiveServicesWheel: React.FC = () => {
                     isSelected ? 'bg-[#C8973E] text-[#0A2540]' : 'bg-[#0A2540] text-[#DFC37C]'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <DivisionIcon name={svc.iconName} className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-semibold leading-snug line-clamp-2">
                   {svc.name}
                 </span>
                 <span className={`text-[10px] font-bold mt-1.5 ${isSelected ? 'text-[#DFC37C]' : 'text-slate-400'}`}>
-                  0{idx + 1}
+                  {pad(idx + 1)}
                 </span>
                 {isSelected && (
                   <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#DFC37C] rotate-45" />
@@ -198,11 +239,11 @@ export const InteractiveServicesWheel: React.FC = () => {
               <div className="lg:col-span-7 space-y-6">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 rounded-xl bg-[#C8973E] text-[#0A2540] flex items-center justify-center shadow-md shrink-0">
-                    <activeService.icon className="w-6 h-6" />
+                    <DivisionIcon name={activeService.iconName} className="w-6 h-6" />
                   </div>
                   <div>
                     <span className="text-[11px] font-bold text-[#DFC37C] tracking-[0.14em] uppercase block">
-                      Division 0{activeIdx + 1} of 07
+                      Division {pad(activeIdx + 1)} of {pad(data.length)}
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-serif font-bold text-white leading-tight">
                       {activeService.name}

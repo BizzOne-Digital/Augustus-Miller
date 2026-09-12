@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
-import { StoredUploadModel } from '@/models';
+import {
+  StoredUploadModel,
+  ServiceModel,
+  BookingModel,
+  ContactMessageModel,
+  ProductModel,
+  BlogPostModel,
+  TestimonialModel,
+  TeamMemberModel,
+  FAQModel,
+  SiteSettingsModel
+} from '@/models';
 import {
   ServiceItem,
   Booking,
@@ -97,41 +108,173 @@ function initMemoryStore() {
 }
 
 // MongoDB connection handling
-let isConnected = false;
+//
+// The connection promise is cached on `global` rather than in a module-level
+// flag. Next.js serves many requests concurrently and reloads modules on every
+// edit in dev, so a plain flag lets a second caller see "connected" (or start a
+// second connect) while the handshake is still in flight - which then fails
+// with "Cannot call ... before initial connection is complete" and silently
+// drops the request to the non-persistent memory store.
+declare global {
+  var __miller_mongoose:
+    | { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null }
+    | undefined;
+}
 
-export async function connectToDatabase() {
+/** Resolves true when queries may safely be issued. */
+export async function connectToDatabase(): Promise<boolean> {
   const uri = process.env.MONGODB_URI;
-  if (!uri || isConnected) {
-    return isConnected;
+  if (!uri) return false;
+
+  const cache = (global.__miller_mongoose ||= { conn: null, promise: null });
+
+  // readyState 1 === connected. A dropped connection clears the cache so the
+  // next call reconnects instead of querying a dead socket.
+  if (cache.conn && mongoose.connection.readyState === 1) return true;
+  if (cache.conn) {
+    cache.conn = null;
+    cache.promise = null;
+  }
+
+  if (!cache.promise) {
+    cache.promise = mongoose
+      .connect(uri, {
+        bufferCommands: false,
+        // Atlas needs more than 2s from a cold start or a slow network.
+        serverSelectionTimeoutMS: 15000
+      })
+      .catch(error => {
+        // Clear the cached promise so a later request can retry.
+        cache.promise = null;
+        throw error;
+      });
   }
 
   try {
-    const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 2000,
-    };
-    await mongoose.connect(uri, opts);
-    isConnected = true;
+    cache.conn = await cache.promise;
     return true;
-  } catch {
-    // If MongoDB Atlas is not yet provisioned or unreachable, fallback smoothly
-    isConnected = false;
+  } catch (error) {
+    console.error('MongoDB connection failed; using in-memory fallback:', error);
     return false;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Mongo-backed persistence with an in-memory fallback                       */
+/*                                                                            */
+/*  Every content collection is read from and written to MongoDB whenever      */
+/*  MONGODB_URI is reachable, so admin edits survive a dev-server restart and  */
+/*  a production redeploy. The in-memory store is only used when the database  */
+/*  is unavailable, and is explicitly non-persistent.                          */
+/* -------------------------------------------------------------------------- */
+
+type AnyDoc = Record<string, unknown> & { _id?: unknown };
+
+/** Normalise a Mongoose lean() document into the app's id/ISO-string shape. */
+function mapDoc<T>(doc: unknown): T {
+  const { _id, __v, createdAt, updatedAt, ...rest } = doc as AnyDoc & {
+    __v?: number;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+  };
+  void __v;
+
+  const iso = (v: Date | string | undefined, fallback: string): string =>
+    v instanceof Date ? v.toISOString() : typeof v === 'string' ? v : fallback;
+
+  const created = iso(createdAt, new Date().toISOString());
+
+  return {
+    ...rest,
+    id: String(_id),
+    createdAt: created,
+    updatedAt: iso(updatedAt, created)
+  } as T;
+}
+
+/**
+ * Mongo rejects a non-ObjectId string with a CastError. Records created while
+ * the database was offline carry memory ids such as `srv-4`, so guard every
+ * lookup rather than letting the query throw.
+ */
+function isObjectId(id: string): boolean {
+  return mongoose.isValidObjectId(id);
+}
+
+/** Strip the fields the database owns before writing. */
+function stripMeta(data: object): Record<string, unknown> {
+  const rest = { ...(data as Record<string, unknown>) };
+  delete rest.id;
+  delete rest._id;
+  delete rest.createdAt;
+  delete rest.updatedAt;
+  delete rest.__v;
+  return rest;
+}
+
+/**
+ * Seed a collection from the bundled starter content the first time the app
+ * connects to an empty database, so a fresh install is not a blank site.
+ * Runs at most once per collection per process.
+ */
+const seeded = new Set<string>();
+async function seedIfEmpty(
+  key: string,
+  model: {
+    estimatedDocumentCount: () => Promise<number>;
+    insertMany: (docs: Record<string, unknown>[]) => Promise<unknown>;
+  },
+  initial: object[]
+): Promise<void> {
+  if (seeded.has(key) || initial.length === 0) return;
+  seeded.add(key);
+  try {
+    if ((await model.estimatedDocumentCount()) === 0) {
+      await model.insertMany(initial.map(stripMeta));
+    }
+  } catch (error) {
+    console.error(`Seeding "${key}" failed:`, error);
   }
 }
 
 // SERVICES
 export async function getServices(): Promise<ServiceItem[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('services', ServiceModel, initialServices);
+      const docs = await ServiceModel.find({}).sort({ displayOrder: 1 }).lean();
+      return docs.map(d => mapDoc<ServiceItem>(d));
+    } catch (error) {
+      console.error('getServices failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.services].sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export async function getServiceBySlug(slug: string): Promise<ServiceItem | null> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('services', ServiceModel, initialServices);
+      const doc = await ServiceModel.findOne({ slug, active: true }).lean();
+      return doc ? mapDoc<ServiceItem>(doc) : null;
+    } catch (error) {
+      console.error('getServiceBySlug failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return store.services.find(s => s.slug === slug && s.active) || null;
 }
 
 export async function createService(data: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<ServiceItem> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await ServiceModel.create(stripMeta(data));
+      return mapDoc<ServiceItem>(doc.toObject());
+    } catch (error) {
+      console.error('createService failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newService: ServiceItem = {
     ...data,
@@ -144,6 +287,14 @@ export async function createService(data: Omit<ServiceItem, 'id' | 'createdAt' |
 }
 
 export async function updateService(id: string, data: Partial<ServiceItem>): Promise<ServiceItem | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await ServiceModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<ServiceItem>(doc) : null;
+    } catch (error) {
+      console.error('updateService failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.services.findIndex(s => s.id === id);
   if (index === -1) return null;
@@ -156,6 +307,13 @@ export async function updateService(id: string, data: Partial<ServiceItem>): Pro
 }
 
 export async function deleteService(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await ServiceModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteService failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.services.length;
   store.services = store.services.filter(s => s.id !== id);
@@ -164,11 +322,27 @@ export async function deleteService(id: string): Promise<boolean> {
 
 // BOOKINGS
 export async function getBookings(): Promise<Booking[]> {
+  if (await connectToDatabase()) {
+    try {
+      const docs = await BookingModel.find({}).sort({ createdAt: -1 }).lean();
+      return docs.map(d => mapDoc<Booking>(d));
+    } catch (error) {
+      console.error('getBookings failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function createBooking(data: Omit<Booking, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<Booking> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await BookingModel.create({ ...stripMeta(data), status: 'Pending' });
+      return mapDoc<Booking>(doc.toObject());
+    } catch (error) {
+      console.error('createBooking failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newBooking: Booking = {
     ...data,
@@ -182,6 +356,14 @@ export async function createBooking(data: Omit<Booking, 'id' | 'status' | 'creat
 }
 
 export async function updateBooking(id: string, data: Partial<Booking>): Promise<Booking | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await BookingModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<Booking>(doc) : null;
+    } catch (error) {
+      console.error('updateBooking failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.bookings.findIndex(b => b.id === id);
   if (index === -1) return null;
@@ -194,6 +376,13 @@ export async function updateBooking(id: string, data: Partial<Booking>): Promise
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await BookingModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteBooking failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.bookings.length;
   store.bookings = store.bookings.filter(b => b.id !== id);
@@ -202,11 +391,27 @@ export async function deleteBooking(id: string): Promise<boolean> {
 
 // CONTACT MESSAGES
 export async function getContactMessages(): Promise<ContactMessage[]> {
+  if (await connectToDatabase()) {
+    try {
+      const docs = await ContactMessageModel.find({}).sort({ createdAt: -1 }).lean();
+      return docs.map(d => mapDoc<ContactMessage>(d));
+    } catch (error) {
+      console.error('getContactMessages failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.messages].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function createContactMessage(data: Omit<ContactMessage, 'id' | 'status' | 'createdAt' | 'updatedAt'>): Promise<ContactMessage> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await ContactMessageModel.create({ ...stripMeta(data), status: 'New' });
+      return mapDoc<ContactMessage>(doc.toObject());
+    } catch (error) {
+      console.error('createContactMessage failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newMessage: ContactMessage = {
     ...data,
@@ -220,6 +425,14 @@ export async function createContactMessage(data: Omit<ContactMessage, 'id' | 'st
 }
 
 export async function updateContactMessage(id: string, data: Partial<ContactMessage>): Promise<ContactMessage | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await ContactMessageModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<ContactMessage>(doc) : null;
+    } catch (error) {
+      console.error('updateContactMessage failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.messages.findIndex(m => m.id === id);
   if (index === -1) return null;
@@ -232,6 +445,13 @@ export async function updateContactMessage(id: string, data: Partial<ContactMess
 }
 
 export async function deleteContactMessage(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await ContactMessageModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteContactMessage failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.messages.length;
   store.messages = store.messages.filter(m => m.id !== id);
@@ -240,16 +460,42 @@ export async function deleteContactMessage(id: string): Promise<boolean> {
 
 // PRODUCTS
 export async function getProducts(): Promise<Product[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('products', ProductModel, initialProducts);
+      const docs = await ProductModel.find({}).sort({ createdAt: 1 }).lean();
+      return docs.map(d => mapDoc<Product>(d));
+    } catch (error) {
+      console.error('getProducts failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.products];
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('products', ProductModel, initialProducts);
+      const doc = await ProductModel.findOne({ slug }).lean();
+      return doc ? mapDoc<Product>(doc) : null;
+    } catch (error) {
+      console.error('getProductBySlug failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return store.products.find(p => p.slug === slug) || null;
 }
 
 export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await ProductModel.create(stripMeta(data));
+      return mapDoc<Product>(doc.toObject());
+    } catch (error) {
+      console.error('createProduct failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newProduct: Product = {
     ...data,
@@ -262,6 +508,14 @@ export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'up
 }
 
 export async function updateProduct(id: string, data: Partial<Product>): Promise<Product | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await ProductModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<Product>(doc) : null;
+    } catch (error) {
+      console.error('updateProduct failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.products.findIndex(p => p.id === id);
   if (index === -1) return null;
@@ -274,6 +528,13 @@ export async function updateProduct(id: string, data: Partial<Product>): Promise
 }
 
 export async function deleteProduct(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await ProductModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteProduct failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.products.length;
   store.products = store.products.filter(p => p.id !== id);
@@ -282,16 +543,42 @@ export async function deleteProduct(id: string): Promise<boolean> {
 
 // BLOG
 export async function getBlogPosts(): Promise<BlogPost[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('blog', BlogPostModel, initialBlogPosts);
+      const docs = await BlogPostModel.find({}).sort({ createdAt: -1 }).lean();
+      return docs.map(d => mapDoc<BlogPost>(d));
+    } catch (error) {
+      console.error('getBlogPosts failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.blog];
 }
 
 export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('blog', BlogPostModel, initialBlogPosts);
+      const doc = await BlogPostModel.findOne({ slug }).lean();
+      return doc ? mapDoc<BlogPost>(doc) : null;
+    } catch (error) {
+      console.error('getBlogPostBySlug failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return store.blog.find(b => b.slug === slug) || null;
 }
 
 export async function createBlogPost(data: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<BlogPost> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await BlogPostModel.create(stripMeta(data));
+      return mapDoc<BlogPost>(doc.toObject());
+    } catch (error) {
+      console.error('createBlogPost failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newPost: BlogPost = {
     ...data,
@@ -304,6 +591,14 @@ export async function createBlogPost(data: Omit<BlogPost, 'id' | 'createdAt' | '
 }
 
 export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promise<BlogPost | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await BlogPostModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<BlogPost>(doc) : null;
+    } catch (error) {
+      console.error('updateBlogPost failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.blog.findIndex(b => b.id === id);
   if (index === -1) return null;
@@ -316,6 +611,13 @@ export async function updateBlogPost(id: string, data: Partial<BlogPost>): Promi
 }
 
 export async function deleteBlogPost(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await BlogPostModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteBlogPost failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.blog.length;
   store.blog = store.blog.filter(b => b.id !== id);
@@ -324,11 +626,28 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
 
 // TESTIMONIALS
 export async function getTestimonials(): Promise<Testimonial[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('testimonials', TestimonialModel, initialTestimonials);
+      const docs = await TestimonialModel.find({}).sort({ createdAt: 1 }).lean();
+      return docs.map(d => mapDoc<Testimonial>(d));
+    } catch (error) {
+      console.error('getTestimonials failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.testimonials];
 }
 
 export async function createTestimonial(data: Omit<Testimonial, 'id' | 'createdAt'>): Promise<Testimonial> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await TestimonialModel.create(stripMeta(data));
+      return mapDoc<Testimonial>(doc.toObject());
+    } catch (error) {
+      console.error('createTestimonial failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newTestimonial: Testimonial = {
     ...data,
@@ -340,6 +659,14 @@ export async function createTestimonial(data: Omit<Testimonial, 'id' | 'createdA
 }
 
 export async function updateTestimonial(id: string, data: Partial<Testimonial>): Promise<Testimonial | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await TestimonialModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<Testimonial>(doc) : null;
+    } catch (error) {
+      console.error('updateTestimonial failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.testimonials.findIndex(t => t.id === id);
   if (index === -1) return null;
@@ -351,6 +678,13 @@ export async function updateTestimonial(id: string, data: Partial<Testimonial>):
 }
 
 export async function deleteTestimonial(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await TestimonialModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteTestimonial failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.testimonials.length;
   store.testimonials = store.testimonials.filter(t => t.id !== id);
@@ -359,11 +693,28 @@ export async function deleteTestimonial(id: string): Promise<boolean> {
 
 // TEAM
 export async function getTeam(): Promise<TeamMember[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('team', TeamMemberModel, initialTeam);
+      const docs = await TeamMemberModel.find({}).sort({ displayOrder: 1 }).lean();
+      return docs.map(d => mapDoc<TeamMember>(d));
+    } catch (error) {
+      console.error('getTeam failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.team].sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export async function createTeamMember(data: Omit<TeamMember, 'id' | 'createdAt'>): Promise<TeamMember> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await TeamMemberModel.create(stripMeta(data));
+      return mapDoc<TeamMember>(doc.toObject());
+    } catch (error) {
+      console.error('createTeamMember failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newMember: TeamMember = {
     ...data,
@@ -375,6 +726,14 @@ export async function createTeamMember(data: Omit<TeamMember, 'id' | 'createdAt'
 }
 
 export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<TeamMember | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await TeamMemberModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<TeamMember>(doc) : null;
+    } catch (error) {
+      console.error('updateTeamMember failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.team.findIndex(t => t.id === id);
   if (index === -1) return null;
@@ -386,6 +745,13 @@ export async function updateTeamMember(id: string, data: Partial<TeamMember>): P
 }
 
 export async function deleteTeamMember(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await TeamMemberModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteTeamMember failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.team.length;
   store.team = store.team.filter(t => t.id !== id);
@@ -394,11 +760,28 @@ export async function deleteTeamMember(id: string): Promise<boolean> {
 
 // FAQS
 export async function getFAQs(): Promise<FAQItem[]> {
+  if (await connectToDatabase()) {
+    try {
+      await seedIfEmpty('faqs', FAQModel, initialFAQs);
+      const docs = await FAQModel.find({}).sort({ displayOrder: 1 }).lean();
+      return docs.map(d => mapDoc<FAQItem>(d));
+    } catch (error) {
+      console.error('getFAQs failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return [...store.faqs].sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export async function createFAQ(data: Omit<FAQItem, 'id' | 'createdAt'>): Promise<FAQItem> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await FAQModel.create(stripMeta(data));
+      return mapDoc<FAQItem>(doc.toObject());
+    } catch (error) {
+      console.error('createFAQ failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const newFAQ: FAQItem = {
     ...data,
@@ -410,6 +793,14 @@ export async function createFAQ(data: Omit<FAQItem, 'id' | 'createdAt'>): Promis
 }
 
 export async function updateFAQ(id: string, data: Partial<FAQItem>): Promise<FAQItem | null> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      const doc = await FAQModel.findByIdAndUpdate(id, stripMeta(data), { new: true }).lean();
+      return doc ? mapDoc<FAQItem>(doc) : null;
+    } catch (error) {
+      console.error('updateFAQ failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const index = store.faqs.findIndex(f => f.id === id);
   if (index === -1) return null;
@@ -421,6 +812,13 @@ export async function updateFAQ(id: string, data: Partial<FAQItem>): Promise<FAQ
 }
 
 export async function deleteFAQ(id: string): Promise<boolean> {
+  if ((await connectToDatabase()) && isObjectId(id)) {
+    try {
+      return Boolean(await FAQModel.findByIdAndDelete(id));
+    } catch (error) {
+      console.error('deleteFAQ failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   const initialLength = store.faqs.length;
   store.faqs = store.faqs.filter(f => f.id !== id);
@@ -428,12 +826,37 @@ export async function deleteFAQ(id: string): Promise<boolean> {
 }
 
 // SETTINGS
+//
+// A single document holds the whole settings record; upsert keeps it unique
+// without needing a fixed id.
 export async function getSiteSettings(): Promise<SiteSettings> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await SiteSettingsModel.findOne({}).lean();
+      if (doc) return mapDoc<SiteSettings>(doc);
+      const created = await SiteSettingsModel.create(stripMeta(initialSiteSettings));
+      return mapDoc<SiteSettings>(created.toObject());
+    } catch (error) {
+      console.error('getSiteSettings failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   return { ...store.settings };
 }
 
 export async function updateSiteSettings(data: Partial<SiteSettings>): Promise<SiteSettings> {
+  if (await connectToDatabase()) {
+    try {
+      const doc = await SiteSettingsModel.findOneAndUpdate(
+        {},
+        { $set: stripMeta(data) },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      ).lean();
+      if (doc) return mapDoc<SiteSettings>(doc);
+    } catch (error) {
+      console.error('updateSiteSettings failed, falling back to memory store:', error);
+    }
+  }
   const store = initMemoryStore();
   store.settings = {
     ...store.settings,

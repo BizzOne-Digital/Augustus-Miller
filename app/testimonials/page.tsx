@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, ArrowRight, Star } from 'lucide-react';
 import Header from '@/components/site/Header';
 import Footer from '@/components/site/Footer';
@@ -7,6 +8,12 @@ import HeroBackground from '@/components/site/HeroBackground';
 import { getTestimonials } from '@/lib/db/db';
 import type { Metadata } from 'next';
 import { DEFAULT_LOCALE, generatePageMetadata } from '@/lib/seo';
+import { resolveImageSrc } from '@/lib/images';
+
+
+// Admin edits must show up on the public site immediately, so this route is
+// rendered per request instead of being cached at build time.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generatePageMetadata('testimonials', DEFAULT_LOCALE, '/testimonials');
@@ -60,16 +67,30 @@ export default async function TestimonialsPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100">
-                    <span className="font-serif font-bold text-[#0A2540] text-base block">
-                      {test.customerName}
-                    </span>
-                    <span className="text-xs text-slate-500 block">
-                      {test.customerRole} {test.company ? `• ${test.company}` : ''}
-                    </span>
-                    <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#0A2540]/5 text-[#C8973E] text-[11px] font-semibold">
-                      Service: {test.serviceCategory}
-                    </span>
+                  <div className="pt-4 border-t border-slate-100 flex items-start gap-3">
+                    {test.avatarUrl?.trim() && (
+                      <div className="relative w-12 h-12 shrink-0 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+                        <Image
+                          src={resolveImageSrc(test.avatarUrl)}
+                          alt={test.customerName}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <span className="font-serif font-bold text-[#0A2540] text-base block">
+                        {test.customerName}
+                      </span>
+                      <span className="text-xs text-slate-500 block">
+                        {test.customerRole} {test.company ? `• ${test.company}` : ''}
+                      </span>
+                      <span className="inline-block mt-2 px-2.5 py-0.5 rounded-full bg-[#0A2540]/5 text-[#C8973E] text-[11px] font-semibold">
+                        Service: {test.serviceCategory}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
