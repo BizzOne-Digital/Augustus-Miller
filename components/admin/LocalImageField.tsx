@@ -211,13 +211,16 @@ export default function LocalImageField({
           </div>
         </div>
 
-        {/* Manual URL entry stays available for external images. */}
+        {/* Optional manual entry for external images. Kept as `type="text"`:
+            uploaded images are stored as relative paths (`/api/uploads/...`),
+            which a `type="url"` input rejects and would block form submission. */}
         <input
-          type="url"
+          type="text"
+          inputMode="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={isBusy}
-          placeholder="…or paste an external image URL"
+          placeholder="Optional — paste an external image URL instead"
           className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700 outline-none transition-colors focus:border-[#C8973E] disabled:bg-slate-50"
         />
 
