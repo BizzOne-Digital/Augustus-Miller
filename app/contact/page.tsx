@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Phone,
@@ -28,6 +28,10 @@ function ContactFormContent() {
   const [message, setMessage] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
+  // `submitting` state and the button's disabled attribute only apply after the
+  // next render, so two clicks in the same tick would both get through. This ref
+  // flips synchronously and is the actual duplicate guard.
+  const inFlight = useRef(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,6 +43,11 @@ function ContactFormContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Guards a double-click or an Enter press landing while the first request
+    // is still open, which would create a duplicate inquiry.
+    if (inFlight.current) return;
+
     setError('');
 
     if (!name || !email || !phone || !message) {
@@ -46,6 +55,12 @@ function ContactFormContent() {
       return;
     }
 
+    if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email.trim())) {
+      setError('Please provide a valid email address so we can reply to you.');
+      return;
+    }
+
+    inFlight.current = true;
     setSubmitting(true);
     try {
       const res = await fetch('/api/messages', {
@@ -64,10 +79,21 @@ function ContactFormContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send message');
 
+      // Only clear the fields once the submission has actually been processed.
+      setName('');
+      setEmail('');
+      setPhone('');
+      setPreferredDate('');
+      setMessage('');
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while sending your message.');
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'An error occurred while sending your message.'
+      );
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };
